@@ -5,11 +5,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.stockmonitor.BaseIntegrationTest;
 import com.stockmonitor.model.Universe;
+import com.stockmonitor.model.UniverseConstituent;
+import com.stockmonitor.repository.UniverseConstituentRepository;
 import com.stockmonitor.repository.UniverseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -26,6 +30,9 @@ class UniverseContractTest extends BaseIntegrationTest {
 
   @Autowired
   private UniverseRepository universeRepository;
+
+  @Autowired
+  private UniverseConstituentRepository universeConstituentRepository;
 
   @BeforeEach
   void setUpAuth() {
@@ -74,7 +81,49 @@ class UniverseContractTest extends BaseIntegrationTest {
           .build();
 
       universeRepository.saveAll(Arrays.asList(sp500, sp500MidCap, russell2000));
+
+      // Add some test constituents for each universe
+      UUID sp500Id = UUID.fromString("00000000-0000-0000-0000-000000000001");
+      UUID sp500MidCapId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+      UUID russell2000Id = UUID.fromString("00000000-0000-0000-0000-000000000003");
+
+      // Add constituents for S&P 500
+      universeConstituentRepository.saveAll(Arrays.asList(
+          createConstituent(sp500Id, "AAPL", "Apple Inc.", "Technology"),
+          createConstituent(sp500Id, "MSFT", "Microsoft Corporation", "Technology"),
+          createConstituent(sp500Id, "GOOGL", "Alphabet Inc.", "Technology")
+      ));
+
+      // Add constituents for S&P 500 + Mid-Caps
+      universeConstituentRepository.saveAll(Arrays.asList(
+          createConstituent(sp500MidCapId, "AAPL", "Apple Inc.", "Technology"),
+          createConstituent(sp500MidCapId, "MSFT", "Microsoft Corporation", "Technology"),
+          createConstituent(sp500MidCapId, "GOOGL", "Alphabet Inc.", "Technology"),
+          createConstituent(sp500MidCapId, "ZS", "Zscaler Inc.", "Technology")
+      ));
+
+      // Add constituents for Russell 2000
+      universeConstituentRepository.saveAll(Arrays.asList(
+          createConstituent(russell2000Id, "CELH", "Celsius Holdings", "Consumer Staples"),
+          createConstituent(russell2000Id, "CHWY", "Chewy Inc.", "Consumer Discretionary")
+      ));
     }
+  }
+
+  private UniverseConstituent createConstituent(UUID universeId, String symbol, String companyName, String sector) {
+    return UniverseConstituent.builder()
+        .universeId(universeId)
+        .symbol(symbol)
+        .companyName(companyName)
+        .sector(sector)
+        .industry("Technology Services")
+        .marketCapTier("LARGE_CAP")
+        .liquidityTier(5)
+        .avgDailyVolume(BigDecimal.valueOf(50_000_000))
+        .avgDailyValue(BigDecimal.valueOf(5_000_000_000L))
+        .isActive(true)
+        .addedDate(LocalDate.now())
+        .build();
   }
 
   @Test

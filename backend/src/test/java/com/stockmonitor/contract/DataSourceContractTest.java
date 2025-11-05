@@ -5,7 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.stockmonitor.model.DataSource;
+import com.stockmonitor.repository.DataSourceRepository;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,6 +25,39 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 public class DataSourceContractTest extends BaseIntegrationTest {
 
+  @Autowired private DataSourceRepository dataSourceRepository;
+
+  @BeforeEach
+  void seedDataSources() {
+    // Seed 4 critical data sources required by tests
+    createDataSource("market-data", "Market Data", "API", "Yahoo Finance",
+        "Stock prices and volumes", 24, 48);
+    createDataSource("factor-data", "Factor Data", "API", "Alpha Vantage",
+        "Factor scores and analytics", 60, 120);
+    createDataSource("fundamental-data", "Fundamental Data", "API", "Financial Modeling Prep",
+        "Company fundamentals", 1440, 2880);
+    createDataSource("benchmark-data", "Benchmark Data", "API", "S&P Global",
+        "Benchmark returns (S&P 500, etc.)", 1440, 2880);
+  }
+
+  private void createDataSource(String name, String displayName, String sourceType,
+      String provider, String description, int refreshHours, int stalenessHours) {
+    DataSource ds = DataSource.builder()
+        .name(name)
+        .sourceType(sourceType)
+        .provider(provider)
+        .description(description)
+        .refreshFrequencyHours(refreshHours)
+        .stalenessThresholdHours(stalenessHours)
+        .lastSuccessfulUpdate(LocalDateTime.now().minusMinutes(30)) // Fresh data
+        .lastAttemptedUpdate(LocalDateTime.now().minusMinutes(30))
+        .healthStatus("HEALTHY")
+        .consecutiveFailures(0)
+        .isCritical(true)
+        .isActive(true)
+        .build();
+    dataSourceRepository.save(ds);
+  }
 
   /**
    * Test GET /api/data-sources returns all data sources (FR-037, FR-038).

@@ -3,6 +3,7 @@ package com.stockmonitor.controller;
 import com.stockmonitor.dto.ExclusionDTO;
 import com.stockmonitor.dto.RecommendationDTO;
 import com.stockmonitor.dto.RecommendationRunDTO;
+import com.stockmonitor.repository.UserRepository;
 import com.stockmonitor.service.ExclusionExportService;
 import com.stockmonitor.service.ExclusionReasonService;
 import com.stockmonitor.service.RecommendationService;
@@ -11,9 +12,12 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -37,6 +41,7 @@ public class RecommendationController {
   private final RecommendationService recommendationService;
   private final ExclusionReasonService exclusionReasonService;
   private final ExclusionExportService exclusionExportService;
+  private final UserRepository userRepository;
 
   /**
    * Trigger new recommendation run.
@@ -69,7 +74,7 @@ public class RecommendationController {
     RecommendationRunDTO run =
         recommendationService.triggerRecommendationRun(portfolioId, universeId, runType);
 
-    return ResponseEntity.ok(run);
+    return ResponseEntity.status(HttpStatus.CREATED).body(run);
   }
 
   @GetMapping("/api/runs/{id}")
@@ -91,6 +96,52 @@ public class RecommendationController {
   public ResponseEntity<List<RecommendationRunDTO>> getRunsForUser(@PathVariable UUID userId) {
     log.info("Get all runs request for user: {}", userId);
     List<RecommendationRunDTO> runs = recommendationService.getRecommendationRunsForUser(userId);
+    return ResponseEntity.ok(runs);
+  }
+
+  /**
+   * Get current recommendations for a portfolio.
+   * Returns recommendations from most recent SCHEDULED run only (not OFF_CYCLE runs).
+   * Per FR-028, off-cycle runs don't overwrite official recommendations.
+   *
+   * @param portfolioId Portfolio ID
+   * @return List of recommendations from latest SCHEDULED run
+   */
+  @GetMapping("/api/portfolios/{portfolioId}/recommendations")
+  public ResponseEntity<List<RecommendationDTO>> getCurrentRecommendationsForPortfolio(
+      @PathVariable UUID portfolioId) {
+    log.info("Get current recommendations for portfolio: {}", portfolioId);
+    List<RecommendationDTO> recommendations =
+        recommendationService.getCurrentRecommendationsForPortfolio(portfolioId);
+    return ResponseEntity.ok(recommendations);
+  }
+
+  /**
+   * Get all runs, optionally filtered by run_type.
+   * Per FR-028, supports filtering by SCHEDULED or OFF_CYCLE.
+   *
+   * @param runType Optional filter: SCHEDULED or OFF_CYCLE
+   * @return List of runs
+   */
+  @GetMapping("/api/runs")
+  public ResponseEntity<List<RecommendationRunDTO>> getAllRuns(
+      @RequestParam(required = false) String runType) {
+    log.info("Get runs request with run_type filter: {}", runType);
+
+    // Get authenticated user's ID
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    UUID userId = userRepository.findByEmail(userEmail)
+        .orElseThrow(() -> new IllegalStateException("User not found"))
+        .getId();
+
+    List<RecommendationRunDTO> runs;
+    if (runType != null && !runType.trim().isEmpty()) {
+      runs = recommendationService.getRunsByTypeForUser(userId, runType.toUpperCase());
+    } else {
+      runs = recommendationService.getRecommendationRunsForUser(userId);
+    }
+
     return ResponseEntity.ok(runs);
   }
 

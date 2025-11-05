@@ -25,6 +25,43 @@ public class ConstraintContractTest extends BaseIntegrationTest {
 
   @Autowired private ObjectMapper objectMapper;
 
+  private UUID testPortfolioId;
+  private UUID testUserId;
+
+  @org.junit.jupiter.api.BeforeEach
+  void setUp() {
+    // Create test portfolio and user for constraint tests
+    testUserId = testDataHelper.createTestUser("testuser@example.com").getId();
+    testPortfolioId = UUID.randomUUID();
+    testDataHelper.createTestPortfolio(testPortfolioId, testUserId);
+
+    // Create viewer user for authorization tests
+    testDataHelper.createTestUserWithRole("viewer@example.com",
+        com.stockmonitor.model.User.UserRole.VIEWER);
+
+    // Seed data for preview tests (RecommendationRun and Holdings)
+    seedPreviewTestData();
+  }
+
+  private void seedPreviewTestData() {
+    // Create holdings for turnover calculation
+    testDataHelper.createTestHolding(testPortfolioId, "AAPL",
+        java.math.BigDecimal.valueOf(100), java.math.BigDecimal.valueOf(150.00), "Technology");
+    testDataHelper.createTestHolding(testPortfolioId, "MSFT",
+        java.math.BigDecimal.valueOf(50), java.math.BigDecimal.valueOf(300.00), "Technology");
+
+    // Create historical recommendation run for preview service
+    com.stockmonitor.model.RecommendationRun testRun =
+        testDataHelper.createTestRecommendationRun(testUserId, testPortfolioId);
+
+    // Create some recommendations for the run
+    testDataHelper.createTestRecommendation(testRun.getId(), "AAPL", 1, "Technology");
+    testDataHelper.createTestRecommendation(testRun.getId(), "MSFT", 2, "Technology");
+    testDataHelper.createTestRecommendation(testRun.getId(), "GOOGL", 3, "Technology");
+    testDataHelper.createTestRecommendation(testRun.getId(), "NVDA", 4, "Technology");
+    testDataHelper.createTestRecommendation(testRun.getId(), "META", 5, "Technology");
+  }
+
   /**
    * T132: Contract test for POST /api/portfolios/{id}/constraints/preview
    *
@@ -33,7 +70,7 @@ public class ConstraintContractTest extends BaseIntegrationTest {
   @Test
   @DisplayName("POST /api/portfolios/{id}/constraints/preview should return preview DTO")
   public void testConstraintPreview() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
+    UUID portfolioId = testPortfolioId;
 
     // Create modified constraints
     ConstraintSetDTO modifiedConstraints =
@@ -69,7 +106,7 @@ public class ConstraintContractTest extends BaseIntegrationTest {
   @Test
   @DisplayName("PUT /api/portfolios/{id}/constraints should save and return constraints")
   public void testSaveConstraints() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
+    UUID portfolioId = testPortfolioId;
 
     ConstraintSetDTO updatedConstraints =
         ConstraintSetDTO.builder()
@@ -100,7 +137,7 @@ public class ConstraintContractTest extends BaseIntegrationTest {
   @Test
   @DisplayName("PUT /api/portfolios/{id}/constraints should reject VIEWER role with 403")
   public void testConstraintSaveRejectsViewer() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
+    UUID portfolioId = testPortfolioId;
 
     ConstraintSetDTO constraints =
         ConstraintSetDTO.builder()
@@ -125,7 +162,7 @@ public class ConstraintContractTest extends BaseIntegrationTest {
   @Test
   @DisplayName("POST /api/portfolios/{id}/constraints/reset should restore defaults")
   public void testResetConstraints() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
+    UUID portfolioId = testPortfolioId;
 
     mockMvc
         .perform(
@@ -144,7 +181,7 @@ public class ConstraintContractTest extends BaseIntegrationTest {
   @Test
   @DisplayName("PUT /api/portfolios/{id}/constraints should validate ranges")
   public void testConstraintValidation() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
+    UUID portfolioId = testPortfolioId;
 
     // Invalid: maxNameWeightLargeCapPct > 100%
     ConstraintSetDTO invalidConstraints =
