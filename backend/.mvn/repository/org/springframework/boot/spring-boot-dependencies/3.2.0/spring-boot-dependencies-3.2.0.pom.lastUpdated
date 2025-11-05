@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 12:34:07 UTC 2025
+00d092f4b27aa764732a63a586f961debf8765d6@21.0.0.179\:15004>@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1762346047141
+https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact org.springframework.boot\:spring-boot-dependencies\:pom\:3.2.0 from/to central (https\://repo.maven.apache.org/maven2)\: Connect to 21.0.0.179\:15004 [/21.0.0.179] failed\: Connect timed out
