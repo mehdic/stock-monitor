@@ -50,27 +50,132 @@ StockMonitor/
 
 ## 🚀 Build and Run
 
-**Current State**: Basic project structure with Spring Boot architecture planned.
+### Building in Claude Code Web Environment
 
-**Future Build Commands** (once Spring Boot configured):
+**IMPORTANT**: Claude Code uses an HTTP proxy with JWT authentication that prevents Maven/npm from downloading dependencies directly. All dependencies are cached locally in the repository.
+
+### Backend Build (Maven)
+
+**Location**: `/home/user/stock-monitor/backend`
+
+**Dependencies**: Cached in `backend/.mvn/repository/` (~250 MB)
+
+**Build Commands**:
 ```bash
-# Maven build
-mvn clean install
+cd backend
 
-# Run application
-mvn spring-boot:run
+# Compile (offline mode using cached dependencies)
+mvn -o clean compile
+
+# Run tests (offline mode)
+mvn -o clean test
+
+# Package application
+mvn -o clean package
+```
+
+**Maven Configuration**: `backend/.mvn/maven.config` contains:
+```
+-Dmaven.repo.local=.mvn/repository
+```
+
+### Common Build Issues and Fixes
+
+#### Issue 1: "artifact is present but unavailable"
+**Symptom**: Maven complains about artifacts being "cached from a remote repository ID that is unavailable"
+
+**Fix**: Remove `_remote.repositories` metadata files:
+```bash
+cd backend
+find .mvn/repository -name "_remote.repositories" -type f -delete
+```
+
+**Why**: These files contain repository IDs (like "artifactory") that don't exist in the current build context, causing Maven to reject cached artifacts.
+
+#### Issue 2: "Plugin version missing"
+**Symptom**: `'build.plugins.plugin.version' for X is missing`
+
+**Fix**: Add explicit version to the plugin in `pom.xml`:
+```xml
+<plugin>
+    <groupId>org.liquibase</groupId>
+    <artifactId>liquibase-maven-plugin</artifactId>
+    <version>4.24.0</version>  <!-- Add this -->
+</plugin>
+```
+
+**How to find version**: Check cached versions:
+```bash
+ls backend/.mvn/repository/org/GROUP/ARTIFACT/
+```
+
+#### Issue 3: Test compilation errors
+**Common causes**:
+- Missing imports
+- API signature changes
+- Missing test helper methods
+
+**Fix approach**:
+1. Read the compilation error carefully
+2. Fix the specific issue (add import, fix signature, etc.)
+3. Recompile: `mvn -o clean compile`
+4. Run tests: `mvn -o clean test`
+
+### Frontend Build (npm)
+
+**Location**: `/home/user/stock-monitor/frontend`
+
+**Dependencies**: Cached in `frontend/node_modules/` (~200 MB)
+
+**Build Commands**:
+```bash
+cd frontend
+
+# Build production bundle
+npm run build
+
+# Run development server
+npm run dev
 
 # Run tests
-mvn test
+npm test
 ```
 
-**Current (Plain Java)**:
+### Common Frontend Issues
+
+#### Issue 1: Missing platform-specific binaries
+**Symptom**: "Cannot find module @rollup/rollup-linux-x64-gnu"
+
+**Fix**: Re-cache dependencies with platform-specific optionalDependencies included.
+
+**User must run locally**:
 ```bash
-javac src/Main.java -d out/
-java -cp out Main
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+git add -f node_modules/
+git commit -m "Add complete frontend dependencies with platform-specific binaries"
+git push
 ```
 
-**IntelliJ IDEA**: Right-click `Main.java` → Run 'Main.main()'
+### Running the Application
+
+**Backend (Spring Boot)**:
+```bash
+cd backend
+mvn -o spring-boot:run
+```
+
+**Frontend (Development)**:
+```bash
+cd frontend
+npm run dev
+```
+
+**Access**:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8080
+- API Docs: http://localhost:8080/swagger-ui.html
 
 ---
 
