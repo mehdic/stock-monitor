@@ -55,7 +55,7 @@ public class Universe {
 
   @Builder.Default
   @Type(JsonType.class)
-  @Column(name = "liquidity_tier_threshold", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "liquidity_tier_threshold", nullable = false, columnDefinition = "TEXT")
   private String liquidityTierThreshold = "{}";
 
   @Builder.Default

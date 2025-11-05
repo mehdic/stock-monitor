@@ -83,7 +83,7 @@ public class User {
   private String timezone = "America/New_York";
 
   @Type(JsonType.class)
-  @Column(name = "notification_preferences", columnDefinition = "jsonb")
+  @Column(name = "notification_preferences", columnDefinition = "TEXT")
   private String notificationPreferences = "{}";
 
   public enum UserRole {

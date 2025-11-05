@@ -39,19 +39,19 @@ public class FactorModelVersion {
   private Boolean isActive = false;
 
   @Type(JsonType.class)
-  @Column(name = "value_definition", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "value_definition", nullable = false, columnDefinition = "TEXT")
   private String valueDefinition = "{}";
 
   @Type(JsonType.class)
-  @Column(name = "momentum_definition", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "momentum_definition", nullable = false, columnDefinition = "TEXT")
   private String momentumDefinition = "{}";
 
   @Type(JsonType.class)
-  @Column(name = "quality_definition", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "quality_definition", nullable = false, columnDefinition = "TEXT")
   private String qualityDefinition = "{}";
 
   @Type(JsonType.class)
-  @Column(name = "revisions_definition", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "revisions_definition", nullable = false, columnDefinition = "TEXT")
   private String revisionsDefinition = "{}";
 
   @NotBlank
@@ -62,7 +62,7 @@ public class FactorModelVersion {
   private BigDecimal winsorizationPercentile = new BigDecimal("1.00");
 
   @Type(JsonType.class)
-  @Column(name = "composite_weighting", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "composite_weighting", nullable = false, columnDefinition = "TEXT")
   private String compositeWeighting = "{}";
 
   @Column(length = 1000)

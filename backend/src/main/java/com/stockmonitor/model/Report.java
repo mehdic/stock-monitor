@@ -60,15 +60,15 @@ public class Report {
   private Integer exclusionCount;
 
   @Type(JsonType.class)
-  @Column(name = "constraint_snapshot", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "constraint_snapshot", nullable = false, columnDefinition = "TEXT")
   private String constraintSnapshot = "{}";
 
   @Type(JsonType.class)
-  @Column(name = "performance_metrics", columnDefinition = "jsonb")
+  @Column(name = "performance_metrics", columnDefinition = "TEXT")
   private String performanceMetrics;
 
   @Type(JsonType.class)
-  @Column(name = "cost_analysis", columnDefinition = "jsonb")
+  @Column(name = "cost_analysis", columnDefinition = "TEXT")
   private String costAnalysis;
 
   @NotBlank
