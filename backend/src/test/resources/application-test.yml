@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:15:///testdb?TC_DAEMON=true
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: test
-    password: test
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   jpa:
     hibernate:
@@ -11,10 +11,15 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: false
 
   liquibase:
     enabled: false  # Disable Liquibase for tests, use Hibernate schema generation
+
+  h2:
+    console:
+      enabled: false
 
   # Disable Redis for tests
   data:
