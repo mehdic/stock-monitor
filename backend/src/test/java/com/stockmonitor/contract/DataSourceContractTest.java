@@ -9,6 +9,7 @@ import com.stockmonitor.model.DataSource;
 import com.stockmonitor.repository.DataSourceRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,11 @@ public class DataSourceContractTest extends BaseIntegrationTest {
         "Company fundamentals", 1440, 2880);
     createDataSource("benchmark-data", "Benchmark Data", "API", "S&P Global",
         "Benchmark returns (S&P 500, etc.)", 1440, 2880);
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    dataSourceRepository.deleteAll();
   }
 
   private void createDataSource(String name, String displayName, String sourceType,

@@ -8,6 +8,7 @@ import com.stockmonitor.model.Universe;
 import com.stockmonitor.model.UniverseConstituent;
 import com.stockmonitor.repository.UniverseConstituentRepository;
 import com.stockmonitor.repository.UniverseRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,6 +109,14 @@ class UniverseContractTest extends BaseIntegrationTest {
           createConstituent(russell2000Id, "CHWY", "Chewy Inc.", "Consumer Discretionary")
       ));
     }
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    // Delete in reverse dependency order (child → parent)
+    universeConstituentRepository.deleteAll();
+    universeRepository.deleteAll();
+    userRepository.deleteAll();
   }
 
   private UniverseConstituent createConstituent(UUID universeId, String symbol, String companyName, String sector) {

@@ -44,7 +44,7 @@ import java.util.Collections;
 @EnableJpaRepositories(basePackages = "com.stockmonitor.repository")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Transactional
+// @Transactional removed - contract tests need real transaction behavior
 @Import(TestSecurityConfig.class)
 public abstract class BaseIntegrationTest {
 

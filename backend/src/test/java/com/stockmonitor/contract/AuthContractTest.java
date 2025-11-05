@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.BaseIntegrationTest;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -21,6 +22,12 @@ import org.springframework.http.MediaType;
 class AuthContractTest extends BaseIntegrationTest {
 
   @Autowired private ObjectMapper objectMapper;
+
+  @AfterEach
+  void cleanupTestData() {
+    // Delete test users created during auth tests
+    userRepository.deleteAll();
+  }
 
   @Test
   void testRegisterEndpoint_Success() throws Exception {

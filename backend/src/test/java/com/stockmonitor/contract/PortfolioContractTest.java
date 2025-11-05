@@ -4,9 +4,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.repository.HoldingRepository;
+import com.stockmonitor.repository.PortfolioRepository;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -19,6 +23,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
  * <p>T038: POST /api/portfolios/{id}/holdings/upload
  */
 class PortfolioContractTest extends BaseIntegrationTest {
+
+  @Autowired private HoldingRepository holdingRepository;
+  @Autowired private PortfolioRepository portfolioRepository;
 
   private String authToken;
   private String portfolioId;
@@ -34,6 +41,14 @@ class PortfolioContractTest extends BaseIntegrationTest {
 
     // Create test data for performance tests
     seedPerformanceTestData();
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    // Delete in reverse dependency order (child → parent)
+    holdingRepository.deleteAll();
+    portfolioRepository.deleteAll();
+    userRepository.deleteAll();
   }
 
   private void seedPerformanceTestData() {
