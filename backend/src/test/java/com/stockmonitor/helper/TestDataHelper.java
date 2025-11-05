@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Helper class for creating test data in separate transactions.
@@ -27,6 +28,9 @@ public class TestDataHelper {
   private final RecommendationRunRepository recommendationRunRepository;
   private final RecommendationRepository recommendationRepository;
   private final ConstraintSetRepository constraintSetRepository;
+  private final UniverseRepository universeRepository;
+  private final FactorModelVersionRepository factorModelVersionRepository;
+  private final ObjectMapper objectMapper;
 
   /**
    * Create or get a test user in a new transaction.
@@ -332,6 +336,103 @@ public class TestDataHelper {
               .build();
 
           return recommendationRepository.save(rec);
+        });
+  }
+
+  /**
+   * Create a test universe in a new transaction.
+   * Idempotent: returns existing universe if one exists with same name.
+   *
+   * @param name the universe name
+   * @return the created or existing universe
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Universe createTestUniverse(String name) {
+    return universeRepository.findByName(name)
+        .orElseGet(() -> {
+          try {
+            Universe universe = Universe.builder()
+                .name(name)
+                .type("CUSTOM")
+                .benchmarkSymbol("SPY")
+                .description("Test universe for integration tests")
+                .effectiveDate(LocalDate.now())
+                .constituentCount(100)
+                .isActive(true)
+                .version(1)
+                .liquidityTierThreshold(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("tier1_min_adv_usd", 10000000);
+                      put("tier2_min_adv_usd", 5000000);
+                      put("tier3_min_adv_usd", 1000000);
+                    }}
+                ))
+                .build();
+            return universeRepository.save(universe);
+          } catch (Exception e) {
+            throw new RuntimeException("Failed to create test universe", e);
+          }
+        });
+  }
+
+  /**
+   * Create a test factor model version in a new transaction.
+   * Idempotent: returns existing version if one exists with same version number.
+   *
+   * @param versionNumber the version number
+   * @return the created or existing factor model version
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public FactorModelVersion createTestFactorModelVersion(String versionNumber) {
+    return factorModelVersionRepository.findByVersionNumber(versionNumber)
+        .orElseGet(() -> {
+          try {
+            FactorModelVersion version = FactorModelVersion.builder()
+                .versionNumber(versionNumber)
+                .isActive(true)
+                .effectiveDate(LocalDate.now())
+                .createdBy("test-system")
+                .approvedBy("test-admin")
+                .sectorNeutralizationMethod("Z_SCORE")
+                .winsorizationPercentile(BigDecimal.valueOf(1.00))
+                .description("Test factor model version")
+                .valueDefinition(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("metrics", java.util.Arrays.asList("PE", "PB", "PS"));
+                      put("weights", java.util.Arrays.asList(0.4, 0.3, 0.3));
+                    }}
+                ))
+                .momentumDefinition(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("periods", java.util.Arrays.asList(1, 3, 6, 12));
+                      put("weights", java.util.Arrays.asList(0.1, 0.2, 0.3, 0.4));
+                    }}
+                ))
+                .qualityDefinition(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("metrics", java.util.Arrays.asList("ROE", "ROA", "DEBT_TO_EQUITY"));
+                      put("weights", java.util.Arrays.asList(0.4, 0.3, 0.3));
+                    }}
+                ))
+                .revisionsDefinition(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("metrics", java.util.Arrays.asList("EPS_REV_UP", "EPS_REV_DOWN"));
+                      put("weights", java.util.Arrays.asList(0.6, 0.4));
+                    }}
+                ))
+                .compositeWeighting(objectMapper.writeValueAsString(
+                    new java.util.HashMap<String, Object>() {{
+                      put("value", 0.25);
+                      put("momentum", 0.25);
+                      put("quality", 0.25);
+                      put("revisions", 0.25);
+                    }}
+                ))
+                .build();
+            return factorModelVersionRepository.save(version);
+          } catch (Exception e) {
+            throw new RuntimeException("Failed to create test factor model version", e);
+          }
         });
   }
 }
