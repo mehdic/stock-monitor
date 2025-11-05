@@ -56,8 +56,8 @@ public class TestBatchConfig {
             }
 
             @Override
-            public JobExecution execute(JobParameters parameters) {
-                return null;
+            public void execute(JobExecution execution) {
+                // Mock implementation - no-op for tests
             }
         };
     }
@@ -79,8 +79,8 @@ public class TestBatchConfig {
             }
 
             @Override
-            public JobExecution execute(JobParameters parameters) {
-                return null;
+            public void execute(JobExecution execution) {
+                // Mock implementation - no-op for tests
             }
         };
     }
@@ -102,8 +102,8 @@ public class TestBatchConfig {
             }
 
             @Override
-            public JobExecution execute(JobParameters parameters) {
-                return null;
+            public void execute(JobExecution execution) {
+                // Mock implementation - no-op for tests
             }
         };
     }
