@@ -15,9 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,16 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("batch-test")
-@Testcontainers
 @Import({TestSecurityConfig.class, TestBatchConfig.class})
 public class MonthEndWorkflowTest {
-
-    @Container
-    protected static final PostgreSQLContainer<?> postgresContainer =
-            new PostgreSQLContainer<>("postgres:15-alpine")
-                    .withDatabaseName("testdb")
-                    .withUsername("test")
-                    .withPassword("test");
 
     @Autowired
     private MonthEndScheduler monthEndScheduler;

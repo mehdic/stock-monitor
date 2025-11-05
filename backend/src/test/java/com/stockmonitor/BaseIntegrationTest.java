@@ -21,18 +21,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Collections;
 
 /**
- * Base class for integration tests using TestContainers for PostgreSQL.
+ * Base class for integration tests using H2 in-memory database.
  *
  * <p>Usage: Extend this class for any integration test that requires database access.
  *
- * <p>Features: - PostgreSQL container with automatic cleanup - Transaction rollback after each
+ * <p>Features: - H2 in-memory database configured in PostgreSQL compatibility mode - Transaction rollback after each
  * test - MockMvc for testing REST endpoints - Active 'test' profile - Batch configuration excluded
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -46,18 +43,10 @@ import java.util.Collections;
 @EntityScan(basePackages = "com.stockmonitor.model")
 @EnableJpaRepositories(basePackages = "com.stockmonitor.repository")
 @AutoConfigureMockMvc
-@Testcontainers
 @ActiveProfiles("test")
 @Transactional
 @Import(TestSecurityConfig.class)
 public abstract class BaseIntegrationTest {
-
-  @Container
-  protected static final PostgreSQLContainer<?> postgresContainer =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("testdb")
-          .withUsername("test")
-          .withPassword("test");
 
   @Autowired protected MockMvc mockMvc;
   @Autowired protected JwtService jwtService;
