@@ -40,9 +40,11 @@ public class Recommendation {
   @Column(name = "target_weight_pct", nullable = false, precision = 5, scale = 2)
   private BigDecimal targetWeightPct;
 
+  @Builder.Default
   @Column(name = "current_weight_pct", nullable = false, precision = 5, scale = 2)
   private BigDecimal currentWeightPct = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "weight_change_pct", nullable = false, precision = 5, scale = 2)
   private BigDecimal weightChangePct = BigDecimal.ZERO;
 
@@ -96,6 +98,7 @@ public class Recommendation {
   @Column(name = "risk_contribution_pct", precision = 5, scale = 2)
   private BigDecimal riskContributionPct;
 
+  @Builder.Default
   @Column(name = "change_indicator", nullable = false, length = 20)
   private String changeIndicator = "NEW";
 

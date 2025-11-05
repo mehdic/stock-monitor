@@ -54,21 +54,27 @@ public class Holding {
   @Column(nullable = false, length = 3)
   private String currency;
 
+  @Builder.Default
   @Column(name = "current_price", precision = 19, scale = 4, nullable = false)
   private BigDecimal currentPrice = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "current_market_value", precision = 19, scale = 4, nullable = false)
   private BigDecimal currentMarketValue = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "unrealized_pnl", precision = 19, scale = 4, nullable = false)
   private BigDecimal unrealizedPnl = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "unrealized_pnl_pct", precision = 10, scale = 6, nullable = false)
   private BigDecimal unrealizedPnlPct = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "weight_pct", precision = 5, scale = 2, nullable = false)
   private BigDecimal weightPct = BigDecimal.ZERO;
 
+  @Builder.Default
   @Column(name = "in_universe", nullable = false)
   private Boolean inUniverse = false;
 
@@ -78,6 +84,7 @@ public class Holding {
   @Column(name = "market_cap_tier", length = 20)
   private String marketCapTier;
 
+  @Builder.Default
   @Column(name = "fx_rate_to_base", precision = 19, scale = 8, nullable = false)
   private BigDecimal fxRateToBase = BigDecimal.ONE;
 

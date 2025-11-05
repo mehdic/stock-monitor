@@ -43,6 +43,7 @@ public class TestBatchConfig {
      * Mock pre-compute batch job.
      */
     @Bean(name = "preComputeJob")
+    @Primary
     public Job preComputeJob() {
         return new Job() {
             @Override
@@ -66,6 +67,7 @@ public class TestBatchConfig {
      * Mock staging batch job.
      */
     @Bean(name = "stagingJob")
+    @Primary
     public Job stagingJob() {
         return new Job() {
             @Override
@@ -89,6 +91,7 @@ public class TestBatchConfig {
      * Mock finalization batch job.
      */
     @Bean(name = "finalizationJob")
+    @Primary
     public Job finalizationJob() {
         return new Job() {
             @Override
