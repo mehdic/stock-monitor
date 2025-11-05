@@ -44,14 +44,14 @@ public class AuditLog {
   private String actionDetail;
 
   @Type(JsonType.class)
-  @Column(name = "before_state", columnDefinition = "jsonb")
+  @Column(name = "before_state", columnDefinition = "TEXT")
   private String beforeState = "{}";
 
   @Type(JsonType.class)
-  @Column(name = "after_state", columnDefinition = "jsonb")
+  @Column(name = "after_state", columnDefinition = "TEXT")
   private String afterState = "{}";
 
-  @Column(name = "changed_fields", columnDefinition = "text[]")
+  @Column(name = "changed_fields")
   private String[] changedFields;
 
   @Column(name = "ip_address", length = 45)

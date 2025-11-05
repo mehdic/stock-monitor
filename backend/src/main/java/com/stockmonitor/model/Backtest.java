@@ -95,15 +95,15 @@ public class Backtest {
   private String verdictText;
 
   @Type(JsonType.class)
-  @Column(name = "equity_curve_data", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "equity_curve_data", nullable = false, columnDefinition = "TEXT")
   private String equityCurveData = "[]";
 
   @Type(JsonType.class)
-  @Column(name = "turnover_history", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "turnover_history", nullable = false, columnDefinition = "TEXT")
   private String turnoverHistory = "[]";
 
   @Type(JsonType.class)
-  @Column(name = "cost_assumptions", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "cost_assumptions", nullable = false, columnDefinition = "TEXT")
   private String costAssumptions = "{}";
 
   @Column(nullable = false, length = 20)

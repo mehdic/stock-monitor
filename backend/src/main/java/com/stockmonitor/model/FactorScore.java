@@ -60,7 +60,7 @@ public class FactorScore {
   private String sector;
 
   @Type(JsonType.class)
-  @Column(name = "component_breakdown", columnDefinition = "jsonb", nullable = false)
+  @Column(name = "component_breakdown", nullable = false, columnDefinition = "TEXT")
   private String componentBreakdown = "{}";
 
   @Column(name = "data_quality_score", nullable = false)
