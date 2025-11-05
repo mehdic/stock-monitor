@@ -144,19 +144,79 @@ npm test
 ### Common Frontend Issues
 
 #### Issue 1: Missing platform-specific binaries
-**Symptom**: "Cannot find module @rollup/rollup-linux-x64-gnu"
+**Symptom**: "Cannot find module @rollup/rollup-linux-x64-gnu" or "Cannot find module @esbuild/linux-x64"
 
-**Fix**: Re-cache dependencies with platform-specific optionalDependencies included.
+**Fix**: Install Linux binaries using the automated script.
 
 **User must run locally**:
 ```bash
 cd frontend
-rm -rf node_modules package-lock.json
-npm install
-git add -f node_modules/
-git commit -m "Add complete frontend dependencies with platform-specific binaries"
+
+# Run the automated script to install all Linux binaries
+./install-linux-binaries.sh
+
+# Commit and push as instructed by the script
+git add -f node_modules/@rollup/rollup-linux-x64-gnu/
+git add -f node_modules/@esbuild/linux-x64/
+git commit -m "Add Linux binaries for Rollup and esbuild"
 git push
 ```
+
+**What this does**: The script downloads Linux-specific binaries for Rollup and esbuild using `npm pack`, extracts them, and places them alongside your Mac binaries. Claude Code (running on Linux) needs these to build the frontend.
+
+### Adding New Dependencies
+
+**CRITICAL PROTOCOL**: When Claude needs to add a new dependency (npm or Maven), Claude MUST follow this protocol:
+
+1. **Stop and create installation script** for the user to run locally
+2. **Provide exact commands** for user to execute
+3. **Wait for user** to run commands and push changes
+4. **Resume work** after dependencies are available
+
+**Example - Adding a new npm package**:
+
+If Claude needs to add `axios`:
+
+```bash
+# User runs locally on Mac:
+cd frontend
+npm install axios
+./install-linux-binaries.sh  # If axios has platform-specific binaries
+git add package.json package-lock.json
+git add -f node_modules/     # If new binaries were added
+git commit -m "Add axios dependency"
+git push
+```
+
+**Example - Adding a new Maven dependency**:
+
+If Claude needs to add a Maven dependency:
+
+```bash
+# User runs locally on Mac:
+cd backend
+
+# Add dependency to pom.xml (Claude will provide the exact XML)
+# Then download it:
+mvn dependency:resolve -Dmaven.repo.local=.mvn/repository
+
+# Remove metadata files
+find .mvn/repository -name "_remote.repositories" -type f -delete
+
+# Commit and push
+git add pom.xml .mvn/repository/
+git commit -m "Add [dependency-name] to backend"
+git push
+```
+
+**Why this is required**: Claude Code uses an HTTP proxy with JWT authentication that prevents direct downloads from npm/Maven. All dependencies must be cached in the repository.
+
+**Claude's Responsibility**: When a new dependency is needed:
+1. Create a detailed installation script for the user
+2. Explain what the dependency does and why it's needed
+3. Provide exact git commands to commit and push
+4. **Wait for user confirmation** before proceeding
+5. After user pushes, pull changes and continue work
 
 ### Running the Application
 
