@@ -46,9 +46,6 @@ public class FactorContractTest extends BaseIntegrationTest {
     Portfolio portfolio = Portfolio.builder()
         .id(testPortfolioId)
         .userId(UUID.randomUUID())
-        .name("Test Portfolio")
-        .description("Portfolio for factor testing")
-        .baseCurrency("USD")
         .totalMarketValue(BigDecimal.valueOf(1_000_000))
         .build();
     portfolioRepository.save(portfolio);
