@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:10:18 CET 2025
+log4j-api-2.21.1.jar>artifactory=
+log4j-api-2.21.1.pom>artifactory=

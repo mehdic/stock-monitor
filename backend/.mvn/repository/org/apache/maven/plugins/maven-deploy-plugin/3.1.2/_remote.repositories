@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:09:32 CET 2025
+maven-deploy-plugin-3.1.2.jar>artifactory=
+maven-deploy-plugin-3.1.2.pom>artifactory=

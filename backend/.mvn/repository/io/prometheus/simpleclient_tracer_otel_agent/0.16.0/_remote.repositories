@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:10:28 CET 2025
+simpleclient_tracer_otel_agent-0.16.0.jar>artifactory=
+simpleclient_tracer_otel_agent-0.16.0.pom>artifactory=
