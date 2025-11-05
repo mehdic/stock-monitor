@@ -118,18 +118,13 @@ public class NotificationController {
 
     /**
      * Extract user ID from authentication.
-     * TODO: Implement proper user ID extraction from JWT token.
+     * User ID is stored in JWT token as the principal.
      *
      * @param authentication Authentication object
      * @return User ID
      */
     private UUID getUserIdFromAuth(Authentication authentication) {
-        // Placeholder: Extract from authentication principal
-        // In real implementation, extract from JWT token claims
-        String email = authentication.getName();
-
-        // TODO: Look up user ID from email
-        // For now, return a placeholder
-        return UUID.randomUUID();
+        // JWT token now stores user ID as the principal (username)
+        return UUID.fromString(authentication.getName());
     }
 }

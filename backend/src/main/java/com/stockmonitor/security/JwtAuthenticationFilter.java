@@ -44,10 +44,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     jwt = authHeader.substring(7);
-    userEmail = jwtService.extractUsername(jwt);
+    userEmail = jwtService.extractUsername(jwt); // Note: This is actually user ID, not email (legacy variable name)
 
     if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-      UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+      UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail); // Loads by user ID
 
       if (jwtService.isTokenValid(jwt, userDetails)) {
         UsernamePasswordAuthenticationToken authToken =

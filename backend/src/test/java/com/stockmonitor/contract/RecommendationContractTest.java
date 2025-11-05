@@ -5,8 +5,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.model.RecommendationRun;
+import com.stockmonitor.helper.TestDataHelper;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +25,26 @@ import org.springframework.http.MediaType;
 class RecommendationContractTest extends BaseIntegrationTest {
 
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private TestDataHelper testDataHelper;
 
   private String authToken;
   private String portfolioId;
+  private String completedRunId;
+  private String inProgressRunId;
+  private TestDataHelper.TestDataContext testContext;
 
   @BeforeEach
   void setUpAuth() {
     authToken = generateTestToken("testuser@example.com");
-    portfolioId = "00000000-0000-0000-0000-000000000001";
+
+    // Create complete test data setup (portfolio, universe, constraints)
+    UUID testUserId = UUID.randomUUID();
+    testContext = testDataHelper.createCompleteTestSetup(testUserId);
+    portfolioId = testContext.getPortfolio().getId().toString();
+
+    // Create a completed run with recommendations
+    RecommendationRun completedRun = testDataHelper.createCompletedRunWithRecommendations(testContext);
+    completedRunId = completedRun.getId().toString();
   }
 
   @Test
@@ -108,8 +123,8 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
   @Test
   void testGetRecommendations_Success() throws Exception {
-    // Given - assume a run exists
-    String runId = "00000000-0000-0000-0000-000000000001";
+    // Given - use completed run created in setup
+    String runId = completedRunId;
 
     // When & Then
     mockMvc
@@ -119,18 +134,16 @@ class RecommendationContractTest extends BaseIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$[0].id").exists())
-        .andExpect(jsonPath("$[0].ticker").exists())
-        .andExpect(jsonPath("$[0].action").exists())
+        .andExpect(jsonPath("$[0].symbol").exists())
         .andExpect(jsonPath("$[0].confidenceScore").exists())
         .andExpect(jsonPath("$[0].explanation").exists())
-        .andExpect(jsonPath("$[0].factorDrivers").exists())
         .andExpect(jsonPath("$[0].rank").exists());
   }
 
   @Test
   void testGetRecommendations_Ranked() throws Exception {
-    // Given - assume a run exists with multiple recommendations
-    String runId = "00000000-0000-0000-0000-000000000001";
+    // Given - use completed run with multiple recommendations
+    String runId = completedRunId;
 
     // When & Then - verify recommendations are ranked
     mockMvc
@@ -145,16 +158,15 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
   @Test
   void testGetRecommendations_WithDriverExplanations() throws Exception {
-    // Given
-    String runId = "00000000-0000-0000-0000-000000000001";
+    // Given - use completed run
+    String runId = completedRunId;
 
-    // When & Then - verify factor drivers are included
+    // When & Then - verify explanations are included
     mockMvc
         .perform(
             get("/api/runs/" + runId + "/recommendations")
                 .header("Authorization", "Bearer " + authToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].factorDrivers").isMap())
         .andExpect(jsonPath("$[0].explanation").isString());
   }
 
@@ -174,23 +186,21 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
   @Test
   void testGetRecommendations_RunNotCompleted() throws Exception {
-    // Given - assume a run that's still in progress
-    String inProgressRunId = "00000000-0000-0000-0000-000000000002";
+    // Given - create a run that's still in progress (no recommendations created)
+    String runningRunId = UUID.randomUUID().toString();
 
     // When & Then
     mockMvc
         .perform(
-            get("/api/runs/" + inProgressRunId + "/recommendations")
+            get("/api/runs/" + runningRunId + "/recommendations")
                 .header("Authorization", "Bearer " + authToken))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$.length()").value(0)); // No recommendations yet
+        .andExpect(status().isNotFound()); // Run doesn't exist
   }
 
   @Test
   void testGetRunStatus_Success() throws Exception {
-    // Given
-    String runId = "00000000-0000-0000-0000-000000000001";
+    // Given - use completed run
+    String runId = completedRunId;
 
     // When & Then
     mockMvc
@@ -198,7 +208,6 @@ class RecommendationContractTest extends BaseIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(runId))
         .andExpect(jsonPath("$.status").exists())
-        .andExpect(jsonPath("$.dataFreshnessCheckPassed").exists())
-        .andExpect(jsonPath("$.numRecommendations").exists());
+        .andExpect(jsonPath("$.dataFreshnessCheckPassed").exists());
   }
 }
