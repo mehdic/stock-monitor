@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:10:13 CET 2025
+jackson-core-2.12.7.jar>artifactory=
+jackson-core-2.12.7.pom>artifactory=

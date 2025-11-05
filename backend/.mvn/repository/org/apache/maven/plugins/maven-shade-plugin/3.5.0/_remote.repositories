@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:10:06 CET 2025
+maven-shade-plugin-3.5.0.jar>artifactory=
+maven-shade-plugin-3.5.0.pom>artifactory=

@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Nov 05 13:10:28 CET 2025
+spring-boot-starter-mail-3.2.0.jar>artifactory=
+spring-boot-starter-mail-3.2.0.pom>artifactory=
