@@ -99,6 +99,7 @@ public class TestDataHelper {
                     .cashBalance(BigDecimal.valueOf(100000.00))
                     .totalMarketValue(BigDecimal.valueOf(50000.00))
                     .activeConstraintSetId(savedConstraintSet.getId())
+                    .activeUniverseId(UUID.randomUUID()) // Set a default universe
                     .build();
                 return portfolioRepository.save(portfolio);
               });
@@ -186,6 +187,106 @@ public class TestDataHelper {
               .recommendationCount(30)
               .exclusionCount(5)
               .expectedTurnoverPct(BigDecimal.valueOf(15.0))
+              .build();
+
+          return recommendationRunRepository.save(run);
+        });
+  }
+
+  /**
+   * Create a test recommendation run with a specific ID in a new transaction.
+   *
+   * @param runId the run ID
+   * @param userId the user ID
+   * @param portfolioId the portfolio ID
+   * @return the created or existing recommendation run
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public RecommendationRun createTestRecommendationRunWithId(UUID runId, UUID userId, UUID portfolioId) {
+    return recommendationRunRepository.findById(runId)
+        .orElseGet(() -> {
+          // Create or get constraint set
+          ConstraintSet constraintSet = constraintSetRepository
+              .findByUserIdAndIsActiveTrue(userId)
+              .orElseGet(() -> {
+                ConstraintSet cs = ConstraintSet.builder()
+                    .userId(userId)
+                    .name("Test Constraints")
+                    .isActive(true)
+                    .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+                    .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+                    .turnoverCapPct(BigDecimal.valueOf(25.0))
+                    .version(1)
+                    .build();
+                return constraintSetRepository.save(cs);
+              });
+
+          RecommendationRun run = RecommendationRun.builder()
+              .id(runId)
+              .userId(userId)
+              .portfolioId(portfolioId)
+              .constraintSetId(constraintSet.getId())
+              .universeId(UUID.randomUUID()) // Mock universe ID
+              .runType("SCHEDULED")
+              .status("COMPLETED")
+              .scheduledDate(LocalDate.now())
+              .startedAt(LocalDateTime.now().minusHours(1))
+              .completedAt(LocalDateTime.now().minusMinutes(30))
+              .executionDurationMs(1800000L)
+              .recommendationCount(30)
+              .exclusionCount(5)
+              .expectedTurnoverPct(BigDecimal.valueOf(15.0))
+              .build();
+
+          RecommendationRun savedRun = recommendationRunRepository.save(run);
+
+          // Create some test recommendations for this run
+          createTestRecommendation(runId, "AAPL", 1, "Technology");
+          createTestRecommendation(runId, "MSFT", 2, "Technology");
+
+          return savedRun;
+        });
+  }
+
+  /**
+   * Create a test recommendation run in progress (no recommendations yet) with a specific ID.
+   *
+   * @param runId the run ID
+   * @param userId the user ID
+   * @param portfolioId the portfolio ID
+   * @return the created or existing recommendation run
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public RecommendationRun createTestRecommendationRunInProgress(UUID runId, UUID userId, UUID portfolioId) {
+    return recommendationRunRepository.findById(runId)
+        .orElseGet(() -> {
+          // Create or get constraint set
+          ConstraintSet constraintSet = constraintSetRepository
+              .findByUserIdAndIsActiveTrue(userId)
+              .orElseGet(() -> {
+                ConstraintSet cs = ConstraintSet.builder()
+                    .userId(userId)
+                    .name("Test Constraints")
+                    .isActive(true)
+                    .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+                    .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+                    .turnoverCapPct(BigDecimal.valueOf(25.0))
+                    .version(1)
+                    .build();
+                return constraintSetRepository.save(cs);
+              });
+
+          RecommendationRun run = RecommendationRun.builder()
+              .id(runId)
+              .userId(userId)
+              .portfolioId(portfolioId)
+              .constraintSetId(constraintSet.getId())
+              .universeId(UUID.randomUUID()) // Mock universe ID
+              .runType("SCHEDULED")
+              .status("RUNNING")
+              .scheduledDate(LocalDate.now())
+              .startedAt(LocalDateTime.now().minusMinutes(5))
+              .recommendationCount(0)
               .build();
 
           return recommendationRunRepository.save(run);

@@ -25,11 +25,18 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
   private String authToken;
   private String portfolioId;
+  private java.util.UUID userId;
 
   @BeforeEach
   void setUpAuth() {
     authToken = generateTestToken("testuser@example.com");
     portfolioId = "00000000-0000-0000-0000-000000000001";
+
+    // Get the created user
+    userId = userRepository.findByEmail("testuser@example.com").orElseThrow().getId();
+
+    // Create test portfolio
+    testDataHelper.createTestPortfolio(java.util.UUID.fromString(portfolioId), userId);
   }
 
   @Test

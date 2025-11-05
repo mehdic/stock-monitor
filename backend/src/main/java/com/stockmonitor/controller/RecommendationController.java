@@ -3,7 +3,11 @@ package com.stockmonitor.controller;
 import com.stockmonitor.dto.ExclusionDTO;
 import com.stockmonitor.dto.RecommendationDTO;
 import com.stockmonitor.dto.RecommendationRunDTO;
+import com.stockmonitor.dto.TriggerRunRequest;
+import com.stockmonitor.model.Portfolio;
+import com.stockmonitor.repository.PortfolioRepository;
 import com.stockmonitor.repository.UserRepository;
+import jakarta.validation.Valid;
 import com.stockmonitor.service.ExclusionExportService;
 import com.stockmonitor.service.ExclusionReasonService;
 import com.stockmonitor.service.RecommendationService;
@@ -42,6 +46,7 @@ public class RecommendationController {
   private final ExclusionReasonService exclusionReasonService;
   private final ExclusionExportService exclusionExportService;
   private final UserRepository userRepository;
+  private final PortfolioRepository portfolioRepository;
 
   /**
    * Trigger new recommendation run.
@@ -51,30 +56,39 @@ public class RecommendationController {
    * - SERVICE role: Can trigger SCHEDULED runs only
    * - VIEWER role: Blocked with 403 Forbidden
    *
-   * @param portfolioId Portfolio ID
-   * @param universeId Universe ID
-   * @param runType SCHEDULED or OFF_CYCLE (defaults to OFF_CYCLE if not specified)
+   * @param request Request containing portfolio ID, optional universe ID, and optional run type
    * @return Created run details
    */
   @PostMapping("/api/runs")
   @PreAuthorize("hasRole('OWNER') or hasRole('SERVICE')")
-  public ResponseEntity<RecommendationRunDTO> triggerRun(
-      @RequestParam UUID portfolioId,
-      @RequestParam UUID universeId,
-      @RequestParam(required = false) String runType) {
+  public ResponseEntity<RecommendationRunDTO> triggerRun(@Valid @RequestBody TriggerRunRequest request) {
 
     log.info("Trigger recommendation run request: portfolio={}, universe={}, runType={}",
-        portfolioId, universeId, runType);
+        request.getPortfolioId(), request.getUniverseId(), request.getRunType());
+
+    // Get portfolio to determine universe if not provided
+    Portfolio portfolio = portfolioRepository.findById(request.getPortfolioId())
+        .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
+
+    // Use provided universe or portfolio's active universe
+    UUID universeId = request.getUniverseId() != null
+        ? request.getUniverseId()
+        : portfolio.getActiveUniverseId();
+
+    if (universeId == null) {
+      throw new IllegalArgumentException("Universe ID must be provided or portfolio must have an active universe");
+    }
 
     // Default to OFF_CYCLE for manual runs to avoid overwriting scheduled results
+    String runType = request.getRunType();
     if (runType == null || runType.trim().isEmpty()) {
       runType = "OFF_CYCLE";
     }
 
     RecommendationRunDTO run =
-        recommendationService.triggerRecommendationRun(portfolioId, universeId, runType);
+        recommendationService.triggerRecommendationRun(request.getPortfolioId(), universeId, runType);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(run);
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(run);
   }
 
   @GetMapping("/api/runs/{id}")

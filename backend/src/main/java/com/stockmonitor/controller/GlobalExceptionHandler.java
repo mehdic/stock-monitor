@@ -112,20 +112,23 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ResponseEntity<ErrorResponse> handleIllegalArgument(
       IllegalArgumentException ex, WebRequest request) {
+    // Check if this is a "not found" case
+    boolean isNotFound = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found");
+    HttpStatus status = isNotFound ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+
     ErrorResponse errorResponse =
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
-            .status(HttpStatus.BAD_REQUEST.value())
-            .error("Bad Request")
+            .status(status.value())
+            .error(isNotFound ? "Not Found" : "Bad Request")
             .message(ex.getMessage())
             .path(request.getDescription(false).replace("uri=", ""))
             .build();
 
-    log.warn("Illegal argument: {}", ex.getMessage());
-    return ResponseEntity.badRequest().body(errorResponse);
+    log.warn("{}: {}", isNotFound ? "Resource not found" : "Illegal argument", ex.getMessage());
+    return ResponseEntity.status(status).body(errorResponse);
   }
 
   @ExceptionHandler(com.stockmonitor.service.UniverseService.NotFoundException.class)
