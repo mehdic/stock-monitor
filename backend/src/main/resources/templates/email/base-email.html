@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${subject}">Notification</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #1d4ed8;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+        .disclaimer {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">StockMonitor</div>
+            <div style="color: #6b7280; font-size: 14px; margin-top: 5px;">
+                Portfolio Recommendation System
+            </div>
+        </div>
+
+        <div class="content">
+            <h1 th:text="${title}">Notification Title</h1>
+            <div th:utext="${content}">
+                Email content goes here
+            </div>
+
+            <div th:if="${actionUrl}" style="text-align: center;">
+                <a th:href="${actionUrl}" class="button" th:text="${actionLabel}">
+                    View Details
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                This email was sent to you because you have an active account with StockMonitor.
+                <br/>
+                To manage your notification preferences, visit your
+                <a href="#" style="color: #2563eb;">account settings</a>.
+            </p>
+            <p style="margin-top: 15px;">
+                &copy; 2025 StockMonitor. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

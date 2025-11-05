@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="1.0.1-1" author="stockmonitor">
+    <comment>Create indexes for Universe</comment>
+    <createIndex tableName="universe" indexName="idx_universe_type">
+      <column name="type"/>
+    </createIndex>
+    <createIndex tableName="universe" indexName="idx_universe_active">
+      <column name="is_active"/>
+    </createIndex>
+    <createIndex tableName="universe" indexName="idx_universe_effective">
+      <column name="effective_date"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-2" author="stockmonitor">
+    <comment>Create indexes for User</comment>
+    <createIndex tableName="app_user" indexName="idx_user_universe">
+      <column name="selected_universe_id"/>
+    </createIndex>
+    <createIndex tableName="app_user" indexName="idx_user_created">
+      <column name="created_at"/>
+    </createIndex>
+    <createIndex tableName="app_user" indexName="idx_user_role">
+      <column name="role"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-3" author="stockmonitor">
+    <comment>Create indexes for Portfolio</comment>
+    <createIndex tableName="portfolio" indexName="idx_portfolio_updated">
+      <column name="updated_at"/>
+    </createIndex>
+    <createIndex tableName="portfolio" indexName="idx_portfolio_calculated">
+      <column name="last_calculated_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-4" author="stockmonitor">
+    <comment>Create indexes for Holding</comment>
+    <createIndex tableName="holding" indexName="idx_holding_portfolio">
+      <column name="portfolio_id"/>
+    </createIndex>
+    <createIndex tableName="holding" indexName="idx_holding_portfolio_symbol" unique="true">
+      <column name="portfolio_id"/>
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="holding" indexName="idx_holding_symbol">
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="holding" indexName="idx_holding_universe">
+      <column name="in_universe"/>
+    </createIndex>
+    <createIndex tableName="holding" indexName="idx_holding_sector">
+      <column name="sector"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-5" author="stockmonitor">
+    <comment>Create indexes for UniverseConstituent</comment>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_universe">
+      <column name="universe_id"/>
+    </createIndex>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_universe_symbol" unique="true">
+      <column name="universe_id"/>
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_symbol">
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_sector">
+      <column name="sector"/>
+    </createIndex>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_active">
+      <column name="is_active"/>
+    </createIndex>
+    <createIndex tableName="universe_constituent" indexName="idx_constituent_liquidity">
+      <column name="liquidity_tier"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-6" author="stockmonitor">
+    <comment>Create indexes for ConstraintSet</comment>
+    <createIndex tableName="constraint_set" indexName="idx_constraint_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="constraint_set" indexName="idx_constraint_user_active">
+      <column name="user_id"/>
+      <column name="is_active"/>
+    </createIndex>
+    <createIndex tableName="constraint_set" indexName="idx_constraint_created">
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-7" author="stockmonitor">
+    <comment>Create indexes for RecommendationRun</comment>
+    <createIndex tableName="recommendation_run" indexName="idx_run_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_status">
+      <column name="status"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_type">
+      <column name="run_type"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_scheduled">
+      <column name="scheduled_date"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_completed">
+      <column name="completed_at"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_user_completed">
+      <column name="user_id"/>
+      <column name="completed_at"/>
+    </createIndex>
+    <createIndex tableName="recommendation_run" indexName="idx_run_previous">
+      <column name="previous_run_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-8" author="stockmonitor">
+    <comment>Create indexes for Recommendation</comment>
+    <createIndex tableName="recommendation" indexName="idx_rec_run">
+      <column name="run_id"/>
+    </createIndex>
+    <createIndex tableName="recommendation" indexName="idx_rec_run_symbol" unique="true">
+      <column name="run_id"/>
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="recommendation" indexName="idx_rec_rank">
+      <column name="run_id"/>
+      <column name="rank"/>
+    </createIndex>
+    <createIndex tableName="recommendation" indexName="idx_rec_symbol">
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="recommendation" indexName="idx_rec_change">
+      <column name="change_indicator"/>
+    </createIndex>
+    <createIndex tableName="recommendation" indexName="idx_rec_sector">
+      <column name="sector"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-9" author="stockmonitor">
+    <comment>Create indexes for Exclusion</comment>
+    <createIndex tableName="exclusion" indexName="idx_excl_run">
+      <column name="run_id"/>
+    </createIndex>
+    <createIndex tableName="exclusion" indexName="idx_excl_run_symbol" unique="true">
+      <column name="run_id"/>
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="exclusion" indexName="idx_excl_symbol">
+      <column name="symbol"/>
+    </createIndex>
+    <createIndex tableName="exclusion" indexName="idx_excl_reason">
+      <column name="exclusion_reason_code"/>
+    </createIndex>
+    <createIndex tableName="exclusion" indexName="idx_excl_sector">
+      <column name="sector"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-10" author="stockmonitor">
+    <comment>Create indexes for FactorScore</comment>
+    <createIndex tableName="factor_score" indexName="idx_factor_symbol_type_date" unique="true">
+      <column name="symbol"/>
+      <column name="factor_type"/>
+      <column name="calculation_date"/>
+    </createIndex>
+    <createIndex tableName="factor_score" indexName="idx_factor_symbol_date">
+      <column name="symbol"/>
+      <column name="calculation_date"/>
+    </createIndex>
+    <createIndex tableName="factor_score" indexName="idx_factor_type_date">
+      <column name="factor_type"/>
+      <column name="calculation_date"/>
+    </createIndex>
+    <createIndex tableName="factor_score" indexName="idx_factor_sector_date">
+      <column name="sector"/>
+      <column name="calculation_date"/>
+    </createIndex>
+    <createIndex tableName="factor_score" indexName="idx_factor_date">
+      <column name="calculation_date"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-11" author="stockmonitor">
+    <comment>Create indexes for Backtest</comment>
+    <createIndex tableName="backtest" indexName="idx_backtest_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="backtest" indexName="idx_backtest_status">
+      <column name="status"/>
+    </createIndex>
+    <createIndex tableName="backtest" indexName="idx_backtest_completed">
+      <column name="completed_at"/>
+    </createIndex>
+    <createIndex tableName="backtest" indexName="idx_backtest_user_completed">
+      <column name="user_id"/>
+      <column name="completed_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-12" author="stockmonitor">
+    <comment>Create indexes for Report</comment>
+    <createIndex tableName="report" indexName="idx_report_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="report" indexName="idx_report_type">
+      <column name="report_type"/>
+    </createIndex>
+    <createIndex tableName="report" indexName="idx_report_generated">
+      <column name="generation_timestamp"/>
+    </createIndex>
+    <createIndex tableName="report" indexName="idx_report_user_generated">
+      <column name="user_id"/>
+      <column name="generation_timestamp"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-13" author="stockmonitor">
+    <comment>Create indexes for Notification</comment>
+    <createIndex tableName="notification" indexName="idx_notif_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="notification" indexName="idx_notif_user_read">
+      <column name="user_id"/>
+      <column name="is_read"/>
+    </createIndex>
+    <createIndex tableName="notification" indexName="idx_notif_user_sent">
+      <column name="user_id"/>
+      <column name="sent_at"/>
+    </createIndex>
+    <createIndex tableName="notification" indexName="idx_notif_type">
+      <column name="notification_type"/>
+    </createIndex>
+    <createIndex tableName="notification" indexName="idx_notif_run">
+      <column name="run_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-14" author="stockmonitor">
+    <comment>Create indexes for AuditLog</comment>
+    <createIndex tableName="audit_log" indexName="idx_audit_user">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex tableName="audit_log" indexName="idx_audit_entity">
+      <column name="entity_type"/>
+      <column name="entity_id"/>
+    </createIndex>
+    <createIndex tableName="audit_log" indexName="idx_audit_action">
+      <column name="action"/>
+    </createIndex>
+    <createIndex tableName="audit_log" indexName="idx_audit_created">
+      <column name="created_at"/>
+    </createIndex>
+    <createIndex tableName="audit_log" indexName="idx_audit_user_created">
+      <column name="user_id"/>
+      <column name="created_at"/>
+    </createIndex>
+    <createIndex tableName="audit_log" indexName="idx_audit_session">
+      <column name="session_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="1.0.1-15" author="stockmonitor">
+    <comment>Create indexes for DataSource and FactorModelVersion</comment>
+    <createIndex tableName="data_source" indexName="idx_datasource_type">
+      <column name="source_type"/>
+    </createIndex>
+    <createIndex tableName="data_source" indexName="idx_datasource_health">
+      <column name="health_status"/>
+    </createIndex>
+    <createIndex tableName="data_source" indexName="idx_datasource_critical">
+      <column name="is_critical"/>
+      <column name="health_status"/>
+    </createIndex>
+    <createIndex tableName="data_source" indexName="idx_datasource_updated">
+      <column name="last_successful_update"/>
+    </createIndex>
+    <createIndex tableName="factor_model_version" indexName="idx_factormodel_active">
+      <column name="is_active"/>
+    </createIndex>
+    <createIndex tableName="factor_model_version" indexName="idx_factormodel_effective">
+      <column name="effective_date"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>
