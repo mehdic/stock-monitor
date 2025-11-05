@@ -81,4 +81,4 @@ docker/volumes/
 agent_files/*.log
 
 ### Coordination ###
-coordination/
+coordination/backend/~/
