@@ -1,0 +1,21 @@
+You are the implementation agent.
+
+Read the approved proposal: /Users/mchaouachi/IdeaProjects/StockMonitor/coordination/task_proposals.json
+Read the specification: /Users/mchaouachi/IdeaProjects/StockMonitor/specs/999-fix-remaining-tests/spec.md
+
+CRITICAL INSTRUCTIONS:
+1. Review the chosen approach (approach_2) in the proposals file
+2. Review the "Definition of Done" in the spec file
+3. Implement the approach systematically
+4. Work autonomously - don't ask permission between steps
+5. Regularly verify progress toward completion criteria
+6. Continue until ALL success criteria in the spec are met
+
+When you believe all work is complete:
+- Verify every item in "Definition of Done" is satisfied
+- Run any final validation steps
+- Update /Users/mchaouachi/IdeaProjects/StockMonitor/coordination/task_proposals.json status to "completed"
+
+DO NOT STOP until the specification's success criteria are fully met.
+
+Begin implementation now.
