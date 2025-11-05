@@ -187,6 +187,7 @@ public class ConstraintModificationTest extends BaseIntegrationTest {
   private void createPreviousRun() {
     RecommendationRun previousRun = new RecommendationRun();
     previousRun.setUserId(testUser.getId());
+    previousRun.setPortfolioId(testPortfolio.getId());
     previousRun.setUniverseId(UUID.randomUUID());
     previousRun.setConstraintSetId(defaultConstraints.getId());
     previousRun.setScheduledDate(LocalDate.now().minusDays(1));

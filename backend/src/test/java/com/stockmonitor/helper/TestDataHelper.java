@@ -65,6 +65,7 @@ public class TestDataHelper {
 
   /**
    * Create a test portfolio in a new transaction.
+   * Idempotent: returns existing portfolio if one exists with same userId (due to unique constraint).
    *
    * @param portfolioId the portfolio UUID
    * @param userId the user ID
@@ -72,30 +73,35 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Portfolio createTestPortfolio(UUID portfolioId, UUID userId) {
+    // First check if portfolio exists by portfolioId
     return portfolioRepository.findById(portfolioId)
         .orElseGet(() -> {
-          // Create constraint set for portfolio
-          ConstraintSet constraintSet = ConstraintSet.builder()
-              .userId(userId)
-              .name("Default Constraints")
-              .isActive(true)
-              .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
-              .maxNameWeightMidCapPct(BigDecimal.valueOf(5.0))
-              .maxNameWeightSmallCapPct(BigDecimal.valueOf(2.0))
-              .maxSectorExposurePct(BigDecimal.valueOf(30.0))
-              .turnoverCapPct(BigDecimal.valueOf(25.0))
-              .version(1)
-              .build();
-          ConstraintSet savedConstraintSet = constraintSetRepository.save(constraintSet);
+          // Check if a portfolio already exists for this userId (due to unique constraint)
+          return portfolioRepository.findByUserId(userId)
+              .orElseGet(() -> {
+                // Create constraint set for portfolio
+                ConstraintSet constraintSet = ConstraintSet.builder()
+                    .userId(userId)
+                    .name("Default Constraints")
+                    .isActive(true)
+                    .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+                    .maxNameWeightMidCapPct(BigDecimal.valueOf(5.0))
+                    .maxNameWeightSmallCapPct(BigDecimal.valueOf(2.0))
+                    .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+                    .turnoverCapPct(BigDecimal.valueOf(25.0))
+                    .version(1)
+                    .build();
+                ConstraintSet savedConstraintSet = constraintSetRepository.save(constraintSet);
 
-          Portfolio portfolio = Portfolio.builder()
-              .id(portfolioId)
-              .userId(userId)
-              .cashBalance(BigDecimal.valueOf(100000.00))
-              .totalMarketValue(BigDecimal.valueOf(50000.00))
-              .activeConstraintSetId(savedConstraintSet.getId())
-              .build();
-          return portfolioRepository.save(portfolio);
+                Portfolio portfolio = Portfolio.builder()
+                    .id(portfolioId)
+                    .userId(userId)
+                    .cashBalance(BigDecimal.valueOf(100000.00))
+                    .totalMarketValue(BigDecimal.valueOf(50000.00))
+                    .activeConstraintSetId(savedConstraintSet.getId())
+                    .build();
+                return portfolioRepository.save(portfolio);
+              });
         });
   }
 
@@ -112,21 +118,25 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Holding createTestHolding(UUID portfolioId, String symbol, BigDecimal quantity,
-      BigDecimal costBasis, String sector) {
+      BigDecimal costBasisTotal, String sector) {
     return holdingRepository.findByPortfolioIdAndSymbol(portfolioId, symbol)
         .orElseGet(() -> {
+          BigDecimal costBasisPerShare = costBasisTotal.divide(quantity, 4, java.math.RoundingMode.HALF_UP);
+          BigDecimal currentPrice = costBasisPerShare.multiply(BigDecimal.valueOf(1.1)); // 10% gain
+          BigDecimal currentMarketValue = currentPrice.multiply(quantity);
+
           Holding holding = Holding.builder()
               .portfolioId(portfolioId)
               .symbol(symbol)
               .quantity(quantity)
-              .costBasis(costBasis)
-              .currentPrice(costBasis.multiply(BigDecimal.valueOf(1.1))) // 10% gain
+              .costBasis(costBasisTotal)
+              .costBasisPerShare(costBasisPerShare)
+              .acquisitionDate(LocalDate.now().minusDays(30))
+              .currency("USD")
+              .currentPrice(currentPrice)
+              .currentMarketValue(currentMarketValue)
               .sector(sector)
               .build();
-
-          // Calculate current market value
-          BigDecimal currentMarketValue = holding.getCurrentPrice().multiply(quantity);
-          holding.setCurrentMarketValue(currentMarketValue);
 
           return holdingRepository.save(holding);
         });

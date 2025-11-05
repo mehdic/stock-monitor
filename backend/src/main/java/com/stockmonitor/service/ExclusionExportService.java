@@ -29,7 +29,7 @@ public class ExclusionExportService {
       writer.append(quoteCsvField(exclusion.getCompanyName())).append(",");
       writer.append(quoteCsvField(exclusion.getExclusionReasonCode())).append(",");
       writer.append(quoteCsvField(exclusion.getExplanation())).append(",");
-      writer.append(quoteCsvField(exclusion.getRunDate().toString())).append("\r\n");
+      writer.append(quoteCsvField(exclusion.getRunDate() != null ? exclusion.getRunDate().toString() : "")).append("\r\n");
     }
 
     return writer.toString();
