@@ -1,5 +1,6 @@
 package com.stockmonitor.contract;
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.helper.TestDataHelper;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -7,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,6 +25,20 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 public class BacktestContractTest extends BaseIntegrationTest {
 
+  @Autowired
+  private TestDataHelper testDataHelper;
+
+  private String portfolioId;
+  private TestDataHelper.TestDataContext testContext;
+
+  @BeforeEach
+  void setUp() {
+    // Create complete test data setup (portfolio, universe, constraints)
+    UUID testUserId = UUID.randomUUID();
+    testContext = testDataHelper.createCompleteTestSetup(testUserId);
+    portfolioId = testContext.getPortfolio().getId().toString();
+  }
+
 
   /**
    * Test POST /api/backtests runs backtest with parameters (T170, FR-051 to FR-053).
@@ -36,10 +52,10 @@ public class BacktestContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testRunBacktest() throws Exception {
-    String requestBody =
+    String requestBody = String.format(
         """
             {
-              "portfolioId": "00000000-0000-0000-0000-000000000001",
+              "portfolioId": "%s",
               "startDate": "2022-01-01",
               "endDate": "2024-01-01",
               "constraints": {
@@ -51,7 +67,7 @@ public class BacktestContractTest extends BaseIntegrationTest {
                 "minLiquidityTier": 2
               }
             }
-            """;
+            """, portfolioId);
 
     mockMvc
         .perform(post("/api/backtests").contentType(MediaType.APPLICATION_JSON).content(requestBody))
@@ -97,15 +113,15 @@ public class BacktestContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "VIEWER")
   public void testBacktestRequiresOwnerRole() throws Exception {
-    String requestBody =
+    String requestBody = String.format(
         """
             {
-              "portfolioId": "00000000-0000-0000-0000-000000000001",
+              "portfolioId": "%s",
               "startDate": "2022-01-01",
               "endDate": "2024-01-01",
               "constraints": {}
             }
-            """;
+            """, portfolioId);
 
     mockMvc
         .perform(post("/api/backtests").contentType(MediaType.APPLICATION_JSON).content(requestBody))
@@ -118,15 +134,15 @@ public class BacktestContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testBacktestValidatesDateRange() throws Exception {
-    String requestBody =
+    String requestBody = String.format(
         """
             {
-              "portfolioId": "00000000-0000-0000-0000-000000000001",
+              "portfolioId": "%s",
               "startDate": "2024-01-01",
               "endDate": "2022-01-01",
               "constraints": {}
             }
-            """;
+            """, portfolioId);
 
     mockMvc
         .perform(post("/api/backtests").contentType(MediaType.APPLICATION_JSON).content(requestBody))

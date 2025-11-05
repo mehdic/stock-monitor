@@ -15,6 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,15 +76,19 @@ public abstract class BaseIntegrationTest {
    * Generate a valid JWT token for testing.
    * Creates user in a separate transaction to ensure visibility to HTTP requests.
    *
-   * @param username the username to include in the token
+   * @param email the email to use for user creation
    * @return a valid JWT token string
    */
-  protected String generateTestToken(String username) {
+  protected String generateTestToken(String email) {
     // Create user in a new transaction so it's visible to HTTP requests
-    testDataHelper.createTestUser(username);
+    com.stockmonitor.model.User user = testDataHelper.createTestUser(email);
 
     UserDetails userDetails =
-        User.builder().username(username).password("password").authorities(Collections.emptyList()).build();
+        User.builder()
+            .username(user.getId().toString())
+            .password("password")
+            .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+            .build();
     return jwtService.generateToken(userDetails);
   }
 

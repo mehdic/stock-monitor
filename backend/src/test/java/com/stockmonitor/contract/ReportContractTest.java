@@ -4,6 +4,7 @@ import com.stockmonitor.BaseIntegrationTest;
 import com.stockmonitor.dto.ReportDTO;
 import com.stockmonitor.model.RecommendationRun;
 import com.stockmonitor.repository.RecommendationRunRepository;
+import com.stockmonitor.helper.TestDataHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,24 +42,20 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Autowired
     private RecommendationRunRepository runRepository;
 
+    @Autowired
+    private TestDataHelper testDataHelper;
+
     private UUID testRunId;
+    private TestDataHelper.TestDataContext testContext;
 
     @BeforeEach
     public void setup() {
-        // Create a completed recommendation run for testing
-        RecommendationRun run = RecommendationRun.builder()
-                .userId(UUID.randomUUID())
-                .universeId(UUID.randomUUID())
-                .constraintSetId(UUID.randomUUID())
-                .runType("SCHEDULED")
-                .status("COMPLETED")
-                .scheduledDate(LocalDate.now())
-                .startedAt(LocalDateTime.now().minusHours(1))
-                .completedAt(LocalDateTime.now())
-                .dataFreshnessCheckPassed(true)
-                .build();
+        // Create complete test data setup (portfolio, universe, constraints, holdings)
+        UUID testUserId = UUID.randomUUID();
+        testContext = testDataHelper.createCompleteTestSetup(testUserId);
 
-        run = runRepository.save(run);
+        // Create a completed recommendation run WITH actual recommendations
+        RecommendationRun run = testDataHelper.createCompletedRunWithRecommendations(testContext);
         testRunId = run.getId();
     }
 

@@ -1,5 +1,6 @@
 package com.stockmonitor.integration;
 
+import com.stockmonitor.config.TestBatchConfig;
 import com.stockmonitor.config.TestSecurityConfig;
 import com.stockmonitor.model.Portfolio;
 import com.stockmonitor.model.RecommendationRun;
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @ActiveProfiles("batch-test")
 @Testcontainers
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, TestBatchConfig.class})
 public class MonthEndWorkflowTest {
 
     @Container

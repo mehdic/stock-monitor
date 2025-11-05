@@ -58,6 +58,11 @@ public class ReportGenerationService {
         // Fetch recommendations
         List<Recommendation> recommendations = recommendationRepository.findByRunIdOrderByRankAsc(runId);
 
+        // Validate recommendations exist
+        if (recommendations == null || recommendations.isEmpty()) {
+            throw new IllegalStateException("Run " + runId + " has no recommendations");
+        }
+
         // Build report DTO
         ReportDTO report = ReportDTO.builder()
                 .runId(runId)
@@ -130,6 +135,21 @@ public class ReportGenerationService {
      * @return Summary section
      */
     private ReportDTO.SummarySection buildSummary(List<Recommendation> recommendations) {
+        // Handle empty recommendations gracefully
+        if (recommendations == null || recommendations.isEmpty()) {
+            log.warn("Building summary with empty recommendations list");
+            return ReportDTO.SummarySection.builder()
+                    .totalRecommendations(0)
+                    .buyCount(0)
+                    .sellCount(0)
+                    .holdCount(0)
+                    .expectedAlphaBps(BigDecimal.ZERO)
+                    .expectedCostBps(BigDecimal.ZERO)
+                    .edgeOverCostBps(BigDecimal.ZERO)
+                    .constraintViolations(0)
+                    .build();
+        }
+
         int buyCount = 0;
         int sellCount = 0;
         int holdCount = 0;

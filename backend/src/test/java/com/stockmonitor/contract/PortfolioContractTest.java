@@ -4,8 +4,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.helper.TestDataHelper;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -19,14 +22,22 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
  */
 class PortfolioContractTest extends BaseIntegrationTest {
 
+  @Autowired
+  private TestDataHelper testDataHelper;
+
   private String authToken;
   private String portfolioId;
+  private TestDataHelper.TestDataContext testContext;
 
   @BeforeEach
   void setUpAuth() throws Exception {
     // Generate a valid JWT token for testing
     authToken = generateTestToken("testuser@example.com");
-    portfolioId = "00000000-0000-0000-0000-000000000001";
+
+    // Create complete test data setup (portfolio, universe, constraints)
+    UUID testUserId = UUID.randomUUID();
+    testContext = testDataHelper.createCompleteTestSetup(testUserId);
+    portfolioId = testContext.getPortfolio().getId().toString();
   }
 
   @Test

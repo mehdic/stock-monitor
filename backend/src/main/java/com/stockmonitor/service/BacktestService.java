@@ -39,8 +39,17 @@ public class BacktestService {
 
   /**
    * Get backtest results.
+   *
+   * @param backtestId Backtest ID
+   * @return BacktestDTO
+   * @throws IllegalArgumentException if backtest not found
    */
   public BacktestDTO getBacktest(UUID backtestId) {
-    return backtestStore.get(backtestId);
+    BacktestDTO result = backtestStore.get(backtestId);
+    if (result == null) {
+      log.error("Backtest not found: {}", backtestId);
+      throw new IllegalArgumentException("Backtest not found: " + backtestId);
+    }
+    return result;
   }
 }

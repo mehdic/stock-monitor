@@ -194,4 +194,53 @@ public class RecommendationService {
         .map(RecommendationRunDTO::from)
         .collect(Collectors.toList());
   }
+
+  /**
+   * Get all recommendation runs filtered by run type.
+   *
+   * @param userId User ID
+   * @param runType Run type filter (SCHEDULED or OFF_CYCLE)
+   * @return List of runs matching the run type
+   */
+  @Transactional(readOnly = true)
+  public List<RecommendationRunDTO> getRecommendationRunsByType(UUID userId, String runType) {
+    log.info("Fetching {} runs for user {}", runType, userId);
+    return recommendationRunRepository
+        .findByUserIdAndRunTypeOrderByCreatedAtDesc(userId, runType)
+        .stream()
+        .map(RecommendationRunDTO::from)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Get current recommendations for a portfolio (from latest SCHEDULED run).
+   *
+   * Per FR-028: Only SCHEDULED runs provide the "official" recommendations.
+   * OFF_CYCLE runs are for testing and don't overwrite scheduled results.
+   *
+   * @param portfolioId Portfolio ID
+   * @return List of recommendations from latest scheduled run
+   */
+  @Transactional(readOnly = true)
+  public List<RecommendationDTO> getCurrentRecommendationsForPortfolio(UUID portfolioId) {
+    log.info("Fetching current (SCHEDULED) recommendations for portfolio {}", portfolioId);
+
+    // Get latest scheduled run for this portfolio
+    List<RecommendationRun> scheduledRuns =
+        recommendationRunRepository.findLatestScheduledRunForPortfolio(portfolioId);
+
+    if (scheduledRuns.isEmpty()) {
+      log.info("No scheduled runs found for portfolio {}", portfolioId);
+      return List.of();
+    }
+
+    RecommendationRun latestScheduledRun = scheduledRuns.get(0);
+    log.info("Found latest scheduled run {} for portfolio {}", latestScheduledRun.getId(), portfolioId);
+
+    return recommendationRepository
+        .findByRunIdOrderByRankAsc(latestScheduledRun.getId())
+        .stream()
+        .map(RecommendationDTO::from)
+        .collect(Collectors.toList());
+  }
 }

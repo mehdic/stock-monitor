@@ -11,9 +11,11 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -69,7 +71,7 @@ public class RecommendationController {
     RecommendationRunDTO run =
         recommendationService.triggerRecommendationRun(portfolioId, universeId, runType);
 
-    return ResponseEntity.ok(run);
+    return ResponseEntity.status(HttpStatus.CREATED).body(run);
   }
 
   @GetMapping("/api/runs/{id}")
@@ -85,6 +87,26 @@ public class RecommendationController {
     List<RecommendationDTO> recommendations =
         recommendationService.getRecommendationsForRun(id);
     return ResponseEntity.ok(recommendations);
+  }
+
+  @GetMapping("/api/runs")
+  public ResponseEntity<List<RecommendationRunDTO>> getRuns(
+      @RequestParam(required = false) String run_type,
+      Authentication authentication) {
+
+    // Get current user ID from authentication
+    UUID userId = UUID.fromString(authentication.getName());
+
+    if (run_type != null && !run_type.trim().isEmpty()) {
+      log.info("Get runs request for user {} filtered by run_type: {}", userId, run_type);
+      List<RecommendationRunDTO> runs =
+          recommendationService.getRecommendationRunsByType(userId, run_type);
+      return ResponseEntity.ok(runs);
+    } else {
+      log.info("Get all runs request for user: {}", userId);
+      List<RecommendationRunDTO> runs = recommendationService.getRecommendationRunsForUser(userId);
+      return ResponseEntity.ok(runs);
+    }
   }
 
   @GetMapping("/api/users/{userId}/runs")

@@ -3,9 +3,11 @@ package com.stockmonitor.controller;
 import com.stockmonitor.dto.HoldingsUploadResponse;
 import com.stockmonitor.dto.PerformanceMetricsDTO;
 import com.stockmonitor.dto.PortfolioDTO;
+import com.stockmonitor.dto.RecommendationDTO;
 import com.stockmonitor.model.Holding;
 import com.stockmonitor.service.PerformanceAttributionService;
 import com.stockmonitor.service.PortfolioService;
+import com.stockmonitor.service.RecommendationService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -23,9 +25,13 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Portfolio controller handling portfolio and holdings management.
  *
- * <p>Endpoints: - GET /api/portfolios/{id} - Get portfolio details - POST
- * /api/portfolios/{id}/holdings/upload - Upload holdings CSV - GET /api/portfolios/{id}/holdings -
- * Get all holdings - GET /api/portfolios/{id}/performance - Get performance metrics (T158)
+ * <p>Endpoints:
+ * - POST /api/portfolios - Create/get portfolio for authenticated user
+ * - GET /api/portfolios/{id} - Get portfolio details
+ * - POST /api/portfolios/{id}/holdings/upload - Upload holdings CSV
+ * - GET /api/portfolios/{id}/holdings - Get all holdings
+ * - GET /api/portfolios/{id}/performance - Get performance metrics (T158)
+ * - GET /api/portfolios/{id}/recommendations - Get current recommendations (FR-028)
  */
 @RestController
 @RequestMapping("/api/portfolios")
@@ -35,6 +41,18 @@ public class PortfolioController {
 
   private final PortfolioService portfolioService;
   private final PerformanceAttributionService performanceAttributionService;
+  private final RecommendationService recommendationService;
+
+  @PostMapping
+  @PreAuthorize("hasRole('OWNER') or hasRole('VIEWER')")
+  public ResponseEntity<PortfolioDTO> createPortfolio(Authentication authentication) {
+    // Extract userId from JWT token for security (don't trust client-provided userId)
+    UUID userId = UUID.fromString(authentication.getName());
+    log.info("Create portfolio request for user: {}", userId);
+
+    PortfolioDTO portfolio = portfolioService.getOrCreatePortfolio(userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(portfolio);
+  }
 
   @GetMapping("/{id}")
   public ResponseEntity<PortfolioDTO> getPortfolio(@PathVariable("id") UUID id) {
@@ -79,5 +97,23 @@ public class PortfolioController {
     PerformanceMetricsDTO performance =
         performanceAttributionService.calculatePerformance(id, startDate, endDate);
     return ResponseEntity.ok(performance);
+  }
+
+  /**
+   * Get current recommendations for portfolio (FR-028).
+   *
+   * <p>Returns recommendations from the latest SCHEDULED run only.
+   * Per FR-028: OFF_CYCLE (manual) runs don't overwrite scheduled recommendations.
+   *
+   * @param id Portfolio UUID
+   * @return List of recommendations from latest scheduled run
+   */
+  @GetMapping("/{id}/recommendations")
+  @PreAuthorize("hasRole('OWNER') or hasRole('VIEWER')")
+  public ResponseEntity<List<RecommendationDTO>> getRecommendations(@PathVariable("id") UUID id) {
+    log.info("Get current recommendations for portfolio: {}", id);
+    List<RecommendationDTO> recommendations =
+        recommendationService.getCurrentRecommendationsForPortfolio(id);
+    return ResponseEntity.ok(recommendations);
   }
 }

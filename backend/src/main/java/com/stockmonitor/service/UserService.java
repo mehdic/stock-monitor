@@ -80,17 +80,17 @@ public class UserService {
     user.setLastLoginAt(LocalDateTime.now());
     userRepository.save(user);
 
-    // Generate JWT token
+    // Generate JWT token with user ID as principal for easier access in controllers
     UserDetails userDetails =
         org.springframework.security.core.userdetails.User.builder()
-            .username(user.getEmail())
+            .username(user.getId().toString()) // Use user ID as username for JWT
             .password(user.getPasswordHash())
             .roles(user.getRole().name())
             .build();
 
     String token = jwtService.generateToken(userDetails);
 
-    log.info("User logged in successfully: {}", user.getEmail());
+    log.info("User logged in successfully: {} (ID: {})", user.getEmail(), user.getId());
 
     return LoginResponse.builder()
         .token(token)

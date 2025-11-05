@@ -30,4 +30,12 @@ public interface RecommendationRunRepository extends JpaRepository<Recommendatio
   @Query(
       "SELECT r FROM RecommendationRun r WHERE r.userId = :userId AND r.status = 'FINALIZED' ORDER BY r.completedAt DESC")
   List<RecommendationRun> findCompletedRunsByUser(UUID userId);
+
+  List<RecommendationRun> findByUserIdAndRunTypeOrderByCreatedAtDesc(UUID userId, String runType);
+
+  List<RecommendationRun> findByRunTypeOrderByCreatedAtDesc(String runType);
+
+  @Query(
+      "SELECT r FROM RecommendationRun r JOIN Portfolio p ON r.userId = p.userId WHERE p.id = :portfolioId AND r.runType = 'SCHEDULED' AND r.status = 'COMPLETED' ORDER BY r.completedAt DESC")
+  List<RecommendationRun> findLatestScheduledRunForPortfolio(UUID portfolioId);
 }

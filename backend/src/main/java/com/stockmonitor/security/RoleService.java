@@ -41,17 +41,17 @@ public class RoleService {
             return false;
         }
 
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        UUID userId = UUID.fromString(auth.getName());
+        User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
-            log.warn("User not found: {}", email);
+            log.warn("User not found: {}", userId);
             return false;
         }
 
         // Check if user has OWNER role
         if (user.getRole() == null || user.getRole() != User.UserRole.OWNER) {
-            log.warn("User {} does not have OWNER role", email);
+            log.warn("User {} does not have OWNER role", userId);
             return false;
         }
 
@@ -72,8 +72,8 @@ public class RoleService {
             return false;
         }
 
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        UUID userId = UUID.fromString(auth.getName());
+        User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
             return false;
@@ -111,8 +111,8 @@ public class RoleService {
             return false;
         }
 
-        String email = auth.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+        UUID userId = UUID.fromString(auth.getName());
+        User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
             return false;
