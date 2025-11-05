@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommendation Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #6b7280;
+        }
+
+        h1 {
+            font-size: 18pt;
+            color: #1f2937;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .metadata {
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .metadata-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .metadata-label {
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background-color: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .summary-label {
+            font-size: 9pt;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9pt;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            color: #374151;
+            font-weight: bold;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 2px solid #d1d5db;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .action-buy {
+            background-color: #d1fae5;
+            color: #065f46;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+
+        .action-sell {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+
+        .action-hold {
+            background-color: #e5e7eb;
+            color: #374151;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+
+        .positive {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .disclaimer {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+
+        .disclaimer-title {
+            font-weight: bold;
+            font-size: 11pt;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .disclaimer ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .disclaimer li {
+            margin-bottom: 5px;
+            color: #78350f;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            font-size: 8pt;
+            color: #6b7280;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">StockMonitor</div>
+        <div class="subtitle">Portfolio Recommendation Report</div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="metadata">
+        <div class="metadata-row">
+            <span class="metadata-label">Portfolio:</span>
+            <span th:text="${report.portfolioName}">Portfolio Name</span>
+        </div>
+        <div class="metadata-row">
+            <span class="metadata-label">Universe:</span>
+            <span th:text="${report.universeName}">Universe Name</span>
+        </div>
+        <div class="metadata-row">
+            <span class="metadata-label">Report Date:</span>
+            <span th:text="${#temporals.format(report.runDate, 'MMMM d, yyyy')}">Date</span>
+        </div>
+        <div class="metadata-row">
+            <span class="metadata-label">Data As Of:</span>
+            <span th:text="${#temporals.format(report.dataAsOfDate, 'MMMM d, yyyy')}">Date</span>
+        </div>
+        <div class="metadata-row">
+            <span class="metadata-label">Generated:</span>
+            <span th:text="${#temporals.format(report.generatedAt, 'MMMM d, yyyy HH:mm')}">Timestamp</span>
+        </div>
+        <div class="metadata-row">
+            <span class="metadata-label">Report Version:</span>
+            <span th:text="${report.reportVersion}">1.0</span>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <h1>Executive Summary</h1>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Total Recommendations</div>
+            <div class="summary-value" th:text="${report.summary.totalRecommendations}">0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Expected Alpha</div>
+            <div class="summary-value positive" th:text="${report.summary.expectedAlphaBps} + ' bps'">0 bps</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Edge/Cost</div>
+            <div class="summary-value" th:text="${report.summary.edgeOverCostBps} + ' bps'">0 bps</div>
+        </div>
+    </div>
+
+    <table>
+        <tr>
+            <td><strong>Buy Recommendations:</strong></td>
+            <td th:text="${report.summary.buyCount}">0</td>
+            <td><strong>Sell Recommendations:</strong></td>
+            <td th:text="${report.summary.sellCount}">0</td>
+        </tr>
+        <tr>
+            <td><strong>Hold Recommendations:</strong></td>
+            <td th:text="${report.summary.holdCount}">0</td>
+            <td><strong>Constraint Violations:</strong></td>
+            <td th:text="${report.summary.constraintViolations}">0</td>
+        </tr>
+    </table>
+
+    <!-- Top Picks Section -->
+    <h1>Top 10 Recommendations</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Symbol</th>
+                <th>Action</th>
+                <th>Sector</th>
+                <th style="text-align: right;">Target Wt%</th>
+                <th style="text-align: right;">Change</th>
+                <th style="text-align: right;">Confidence</th>
+                <th style="text-align: right;">Alpha (bps)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="pick : ${report.topPicks}">
+                <td class="rank" th:text="'#' + ${pick.rank}">1</td>
+                <td><strong th:text="${pick.symbol}">AAPL</strong></td>
+                <td>
+                    <span th:if="${pick.action == 'BUY'}" class="action-buy">BUY</span>
+                    <span th:if="${pick.action == 'SELL'}" class="action-sell">SELL</span>
+                    <span th:if="${pick.action == 'HOLD'}" class="action-hold">HOLD</span>
+                </td>
+                <td th:text="${pick.sector}">Technology</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(pick.targetWeightPct, 1, 2)} + '%'">5.00%</td>
+                <td style="text-align: right;"
+                    th:classappend="${pick.weightChangePct > 0} ? 'positive' : 'negative'"
+                    th:text="${pick.weightChangePct > 0 ? '+' : ''} + ${#numbers.formatDecimal(pick.weightChangePct, 1, 2)} + '%'">
+                    +2.50%
+                </td>
+                <td style="text-align: right;" th:text="${pick.confidenceScore}">85</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(pick.expectedAlphaBps, 1, 0)}">50</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Page Break -->
+    <div class="page-break"></div>
+
+    <!-- Detailed Explanations -->
+    <h1>Detailed Recommendations</h1>
+
+    <div th:each="pick, iterStat : ${report.topPicks}">
+        <h2 th:text="'#' + ${pick.rank} + ' - ' + ${pick.symbol} + ' (' + ${pick.action} + ')'">Recommendation</h2>
+        <p th:text="${pick.explanation}">Explanation text</p>
+
+        <table style="margin-top: 10px;">
+            <tr>
+                <td><strong>Current Weight:</strong></td>
+                <td th:text="${#numbers.formatDecimal(pick.currentWeightPct, 1, 2)} + '%'">3.00%</td>
+                <td><strong>Target Weight:</strong></td>
+                <td th:text="${#numbers.formatDecimal(pick.targetWeightPct, 1, 2)} + '%'">5.00%</td>
+            </tr>
+            <tr>
+                <td><strong>Market Cap:</strong></td>
+                <td th:text="${pick.marketCapTier}">LARGE</td>
+                <td><strong>Liquidity Tier:</strong></td>
+                <td th:text="${pick.liquidityTier}">1</td>
+            </tr>
+            <tr>
+                <td><strong>Confidence Score:</strong></td>
+                <td th:text="${pick.confidenceScore}">85</td>
+                <td><strong>Expected Alpha:</strong></td>
+                <td th:text="${#numbers.formatDecimal(pick.expectedAlphaBps, 1, 0)} + ' bps'">50 bps</td>
+            </tr>
+        </table>
+
+        <hr th:if="${!iterStat.last}" style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;"/>
+    </div>
+
+    <!-- Page Break -->
+    <div class="page-break"></div>
+
+    <!-- Constraint Compliance -->
+    <h1>Constraint Compliance</h1>
+
+    <p th:if="${report.constraintCompliance.allConstraintsMet}"
+       style="color: #10b981; font-weight: bold;">
+        ✓ All constraints met
+    </p>
+
+    <p th:if="${!report.constraintCompliance.allConstraintsMet}"
+       style="color: #ef4444; font-weight: bold;">
+        ⚠ Constraint violations detected
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Constraint</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="entry : ${report.constraintCompliance.constraintSummary}">
+                <td th:text="${entry.key}">Constraint Name</td>
+                <td th:text="${entry.value}">Status</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Disclaimers -->
+    <div class="disclaimer">
+        <div class="disclaimer-title">⚠️ IMPORTANT DISCLAIMERS</div>
+        <ul>
+            <li th:each="disclaimer : ${report.disclaimers}" th:text="${disclaimer}">Disclaimer text</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>StockMonitor</strong> - Portfolio Recommendation System</p>
+        <p th:text="'Report generated on ' + ${#temporals.format(report.generatedAt, 'MMMM d, yyyy')} + ' at ' + ${#temporals.format(report.generatedAt, 'HH:mm:ss')}">
+            Generated timestamp
+        </p>
+        <p style="margin-top: 10px;">
+            This report is confidential and intended solely for the use of the individual or entity to whom it is addressed.
+        </p>
+    </div>
+</body>
+</html>

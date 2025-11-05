@@ -28,3 +28,56 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment files ###
+.env
+.env.local
+.env.*.local
+
+### Backend (Java/Maven) ###
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/out/
+backend/bin/
+backend/*.log
+
+### Frontend (Node/React) ###
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/*.log
+
+### Database ###
+*.db
+*.sqlite
+
+### Logs ###
+logs/
+*.log
+
+### Test coverage ###
+coverage/
+.nyc_output/
+
+### Build artifacts ###
+target/
+*.jar
+*.war
+*.ear
+
+### Temporary files ###
+tmp/
+temp/
+*.tmp
+
+### Docker volumes ###
+docker/volumes/
+
+### Agent files ###
+agent_files/*.log
+
+### Coordination ###
+coordination/

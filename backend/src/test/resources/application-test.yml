@@ -1,0 +1,59 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:15:///testdb?TC_DAEMON=true
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Let Hibernate create schema for tests
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  liquibase:
+    enabled: false  # Disable Liquibase for tests, use Hibernate schema generation
+
+  # Disable Redis for tests
+  data:
+    redis:
+      repositories:
+        enabled: false
+  cache:
+    type: none
+
+  # Disable mail for tests
+  mail:
+    host: localhost
+    port: 3025
+
+  # Disable batch jobs for tests
+  batch:
+    job:
+      enabled: false
+
+  # Disable Spring Batch auto-configuration for tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
+
+  # Disable WebSocket for tests
+  websocket:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.stockmonitor: INFO
+    org.testcontainers: INFO
+    org.springframework.test: INFO
+    org.hibernate: WARN
+
+app:
+  batch:
+    enabled: false
+  jwt:
+    secret: dGVzdHNlY3JldGtleWZvcnVuaXR0ZXN0c29ubHltdXN0YmVhdGxlYXN0MjU2Yml0c2xvbmdmb3JoczI1NmFsZ29yaXRobQ==
+    expiration-ms: 3600000

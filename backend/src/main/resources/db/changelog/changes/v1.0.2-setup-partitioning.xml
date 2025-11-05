@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="1.0.2-1" author="stockmonitor">
+    <comment>Note: Partitioning setup for FactorScore and AuditLog tables will be handled manually or via PostgreSQL-specific scripts due to Liquibase limitations with declarative partitioning. This changeset serves as a placeholder for documentation purposes.</comment>
+    <sql>
+      -- Partitioning would typically be set up using PostgreSQL's native partitioning
+      -- For now, tables are created as regular tables
+      -- Future enhancement: Convert to partitioned tables with monthly ranges
+      SELECT 1; -- Placeholder
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,2960 @@
+openapi: 3.0.3
+info:
+  title: Month-End Market Analyst REST API
+  description: |
+    REST API for the Stock Portfolio Analysis and Recommendation System.
+
+    This API enables individual investors to:
+    - Manage portfolio holdings and performance tracking
+    - Receive monthly buy recommendations based on quantitative factor analysis
+    - Understand recommendation rationale through transparency features
+    - Backtest strategies and preview constraint impacts
+    - Maintain regulatory compliance with disclaimers and audit trails
+
+    **Authentication**: All protected endpoints require JWT Bearer token authentication.
+
+    **Rate Limiting**: 1000 requests per hour per user for standard endpoints, 10 requests per hour for compute-intensive operations (runs, backtests).
+
+    **Disclaimer**: This system provides educational analysis only, not investment advice.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@stockmonitor.example.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.stockmonitor.example.com/v1
+    description: Production server
+  - url: https://staging-api.stockmonitor.example.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User registration, login, email verification
+  - name: Users
+    description: User profile and settings management
+  - name: Portfolios
+    description: Portfolio CRUD operations and performance metrics
+  - name: Holdings
+    description: Position management and CSV import
+  - name: Universes
+    description: Investment universe and benchmark selection
+  - name: Constraints
+    description: Risk parameter configuration and preview
+  - name: Recommendations
+    description: Recommendation runs and results
+  - name: Factor Analysis
+    description: Factor scores and diagnostics
+  - name: Backtesting
+    description: Historical performance simulation
+  - name: Data Sources
+    description: Data freshness monitoring
+  - name: Compliance
+    description: Disclaimer acknowledgment and legal
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==================== AUTHENTICATION ====================
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user account
+      description: Creates a new user account and sends email verification link. Session is not active until email is confirmed.
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - baseCurrency
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address (must be unique)
+                  example: investor@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 12
+                  description: Password (minimum 12 characters, must include uppercase, lowercase, number, special character)
+                  example: SecurePass123!
+                baseCurrency:
+                  type: string
+                  enum: [USD, EUR, GBP, CAD, AUD, JPY]
+                  description: User's base currency for all monetary displays
+                  example: USD
+      responses:
+        '201':
+          description: User created successfully, verification email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+                    example: 550e8400-e29b-41d4-a716-446655440000
+                  email:
+                    type: string
+                    example: investor@example.com
+                  message:
+                    type: string
+                    example: Verification email sent. Please check your inbox.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: EMAIL_ALREADY_EXISTS
+                message: Email address is already registered
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user and obtain JWT token
+      description: Returns JWT access token and refresh token for authenticated sessions.
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: investor@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass123!
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT access token (valid for 1 hour)
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  refreshToken:
+                    type: string
+                    description: JWT refresh token (valid for 7 days)
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  expiresIn:
+                    type: integer
+                    description: Access token expiration time in seconds
+                    example: 3600
+                  tokenType:
+                    type: string
+                    example: Bearer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: EMAIL_NOT_VERIFIED
+                message: Please verify your email before logging in
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Authentication
+      summary: Verify email address with token
+      description: Confirms user's email address using verification token sent during registration.
+      operationId: verifyEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Email verification token from email link
+                  example: abc123def456ghi789
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Email verified successfully. You can now log in.
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_TOKEN
+                message: Verification token is invalid or expired
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token using refresh token
+      description: Obtains new access token without requiring login credentials.
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: JWT refresh token from login response
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  expiresIn:
+                    type: integer
+                    example: 3600
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Invalidate current session
+      description: Logs out user by invalidating refresh token.
+      operationId: logoutUser
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== USERS ====================
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Returns authenticated user's profile information and preferences.
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile settings
+      description: Updates user preferences including base currency and notification settings.
+      operationId: updateUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                baseCurrency:
+                  type: string
+                  enum: [USD, EUR, GBP, CAD, AUD, JPY]
+                  example: USD
+                notificationPreferences:
+                  $ref: '#/components/schemas/NotificationPreferences'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== PORTFOLIOS ====================
+  /portfolios:
+    post:
+      tags:
+        - Portfolios
+      summary: Create new portfolio
+      description: Creates a new portfolio for the authenticated user.
+      operationId: createPortfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  description: Portfolio name
+                  example: My Investment Portfolio
+                description:
+                  type: string
+                  maxLength: 500
+                  description: Optional portfolio description
+                  example: Long-term growth portfolio
+      responses:
+        '201':
+          description: Portfolio created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Portfolios
+      summary: List user's portfolios
+      description: Returns all portfolios belonging to authenticated user.
+      operationId: listPortfolios
+      responses:
+        '200':
+          description: Portfolios retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}:
+    get:
+      tags:
+        - Portfolios
+      summary: Get portfolio details
+      description: Returns comprehensive portfolio data including holdings, performance, and benchmark comparison.
+      operationId: getPortfolio
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '200':
+          description: Portfolio details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Portfolios
+      summary: Update portfolio metadata
+      description: Updates portfolio name and description. Does not modify holdings or universe.
+      operationId: updatePortfolio
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: Updated Portfolio Name
+                description:
+                  type: string
+                  maxLength: 500
+                  example: Updated description
+      responses:
+        '200':
+          description: Portfolio updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portfolio'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Portfolios
+      summary: Delete portfolio
+      description: Permanently deletes portfolio and all associated holdings, runs, and recommendations.
+      operationId: deletePortfolio
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '204':
+          description: Portfolio deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/performance:
+    get:
+      tags:
+        - Portfolios
+      summary: Get portfolio performance metrics
+      description: Returns P&L, benchmark comparison, contributors/detractors, and currency breakdown.
+      operationId: getPortfolioPerformance
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - name: period
+          in: query
+          description: Time period for performance calculation
+          schema:
+            type: string
+            enum: [1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, MAX]
+            default: 1M
+      responses:
+        '200':
+          description: Performance metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioPerformance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== HOLDINGS ====================
+  /portfolios/{portfolioId}/holdings:
+    get:
+      tags:
+        - Holdings
+      summary: List portfolio holdings
+      description: Returns all holdings in portfolio with current market values and P&L.
+      operationId: listHoldings
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '200':
+          description: Holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Holding'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Holdings
+      summary: Add single holding
+      description: Manually adds a single holding to portfolio.
+      operationId: addHolding
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoldingInput'
+      responses:
+        '201':
+          description: Holding added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/holdings/upload:
+    post:
+      tags:
+        - Holdings
+      summary: Upload holdings via CSV
+      description: |
+        Bulk import holdings from CSV file. Expected columns: symbol, quantity, costBasis, currency, acquisitionDate.
+
+        CSV format:
+        ```
+        symbol,quantity,costBasis,currency,acquisitionDate
+        AAPL,100,15000.00,USD,2023-01-15
+        MSFT,50,12500.00,USD,2023-02-20
+        ```
+      operationId: uploadHoldings
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - name: mode
+          in: query
+          description: Import mode (replace all holdings or append to existing)
+          schema:
+            type: string
+            enum: [replace, append]
+            default: append
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file containing holdings data
+      responses:
+        '200':
+          description: Holdings uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  successCount:
+                    type: integer
+                    description: Number of holdings successfully imported
+                    example: 45
+                  failureCount:
+                    type: integer
+                    description: Number of rows that failed validation
+                    example: 2
+                  errors:
+                    type: array
+                    description: Validation errors for failed rows
+                    items:
+                      type: object
+                      properties:
+                        row:
+                          type: integer
+                          description: Row number (1-indexed)
+                          example: 3
+                        symbol:
+                          type: string
+                          example: XYZ
+                        reason:
+                          type: string
+                          description: Reason for failure
+                          example: Symbol not found in selected universe
+                  holdings:
+                    type: array
+                    description: Successfully imported holdings
+                    items:
+                      $ref: '#/components/schemas/Holding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: CSV file too large (max 5MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/holdings/{holdingId}:
+    get:
+      tags:
+        - Holdings
+      summary: Get holding details
+      description: Returns detailed information for a single holding including factor scores.
+      operationId: getHolding
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - $ref: '#/components/parameters/HoldingId'
+      responses:
+        '200':
+          description: Holding retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoldingDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Holdings
+      summary: Update holding
+      description: Updates holding details (quantity, cost basis, acquisition date).
+      operationId: updateHolding
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - $ref: '#/components/parameters/HoldingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoldingInput'
+      responses:
+        '200':
+          description: Holding updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Holdings
+      summary: Delete holding
+      description: Removes holding from portfolio.
+      operationId: deleteHolding
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - $ref: '#/components/parameters/HoldingId'
+      responses:
+        '204':
+          description: Holding deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== UNIVERSES ====================
+  /universes:
+    get:
+      tags:
+        - Universes
+      summary: List available investment universes
+      description: Returns preset universe options (S&P 500, S&P 500 + mid-caps, etc.).
+      operationId: listUniverses
+      responses:
+        '200':
+          description: Universes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Universe'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /universes/{universeId}:
+    get:
+      tags:
+        - Universes
+      summary: Get universe details
+      description: Returns universe constituents, sector breakdown, and metadata.
+      operationId: getUniverse
+      parameters:
+        - name: universeId
+          in: path
+          required: true
+          description: Universe identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Universe details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UniverseDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/universe:
+    put:
+      tags:
+        - Universes
+      summary: Set portfolio investment universe
+      description: Assigns investment universe to portfolio for analysis and recommendations.
+      operationId: setPortfolioUniverse
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - universeId
+              properties:
+                universeId:
+                  type: string
+                  format: uuid
+                  description: Universe identifier
+      responses:
+        '200':
+          description: Universe assigned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolioId:
+                    type: string
+                    format: uuid
+                  universeId:
+                    type: string
+                    format: uuid
+                  universeName:
+                    type: string
+                    example: S&P 500
+                  coveragePercentage:
+                    type: number
+                    format: float
+                    description: Percentage of holdings covered by universe (0-100)
+                    example: 87.5
+                  uncoveredHoldings:
+                    type: array
+                    description: Holdings not in selected universe
+                    items:
+                      type: string
+                      example: PRIVATE_CO
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== CONSTRAINTS ====================
+  /constraints/defaults:
+    get:
+      tags:
+        - Constraints
+      summary: Get default constraint values
+      description: Returns recommended default constraints for risk management.
+      operationId: getDefaultConstraints
+      responses:
+        '200':
+          description: Default constraints retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/constraints:
+    get:
+      tags:
+        - Constraints
+      summary: Get portfolio constraints
+      description: Returns current constraint configuration for portfolio.
+      operationId: getPortfolioConstraints
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '200':
+          description: Constraints retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Constraints
+      summary: Update portfolio constraints
+      description: |
+        Saves new constraint configuration. Changes apply to future runs only.
+        Requires Owner role.
+      operationId: updatePortfolioConstraints
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConstraintSet'
+      responses:
+        '200':
+          description: Constraints updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/constraints/preview:
+    post:
+      tags:
+        - Constraints
+      summary: Preview constraint impact
+      description: |
+        Simulates impact of constraint changes on recommendations without saving.
+        Shows expected changes to turnover, pick count, and excluded positions.
+      operationId: previewConstraintImpact
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConstraintSet'
+      responses:
+        '200':
+          description: Preview generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /portfolios/{portfolioId}/constraints/reset:
+    post:
+      tags:
+        - Constraints
+      summary: Reset constraints to defaults
+      description: Restores all constraints to recommended default values. Requires Owner role.
+      operationId: resetConstraints
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '200':
+          description: Constraints reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintSet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== RECOMMENDATIONS ====================
+  /portfolios/{portfolioId}/runs:
+    get:
+      tags:
+        - Recommendations
+      summary: List recommendation runs
+      description: Returns history of recommendation runs for portfolio (scheduled and manual).
+      operationId: listRuns
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+        - name: limit
+          in: query
+          description: Maximum number of runs to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of runs to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Runs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RunSummary'
+                  total:
+                    type: integer
+                    description: Total number of runs
+                    example: 45
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Recommendations
+      summary: Trigger manual recommendation run
+      description: |
+        Starts off-cycle recommendation run. Manual runs are clearly labeled and do not overwrite scheduled month-end results.
+        Requires Owner role. Rate limited to 10 runs per day per portfolio.
+      operationId: createRun
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '202':
+          description: Run initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                    format: uuid
+                    example: 650e8400-e29b-41d4-a716-446655440000
+                  status:
+                    type: string
+                    enum: [QUEUED]
+                    example: QUEUED
+                  message:
+                    type: string
+                    example: Run queued. Estimated completion in 8 minutes.
+                  estimatedCompletionTime:
+                    type: string
+                    format: date-time
+                    example: 2025-10-30T15:08:00Z
+        '400':
+          description: Cannot run (data stale, constraints invalid, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: DATA_SOURCE_STALE
+                message: Cannot run analysis. Fundamentals data is stale (last update 3 days ago). Refresh expected by market close.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RATE_LIMIT_EXCEEDED
+                message: Maximum 10 manual runs per day. Try again tomorrow.
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /runs/{runId}:
+    get:
+      tags:
+        - Recommendations
+      summary: Get run status and metadata
+      description: Returns run state, progress, and execution details. Use WebSocket for real-time updates.
+      operationId: getRun
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Run retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /runs/{runId}/recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Get run recommendations
+      description: |
+        Returns ranked list of buy recommendations with confidence scores, target weights, explanations, and cost estimates.
+        Only available when run status is FINALIZED.
+      operationId: getRunRecommendations
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Recommendations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [FINALIZED]
+                  recommendation Count:
+                    type: integer
+                    description: Number of recommendations
+                    example: 12
+                  totalTargetWeight:
+                    type: number
+                    format: float
+                    description: Sum of target weights (should equal turnover cap)
+                    example: 23.5
+                  totalExpectedCost:
+                    type: number
+                    format: float
+                    description: Total estimated transaction cost in base currency
+                    example: 245.67
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recommendation'
+                  noTradeGuidance:
+                    type: object
+                    nullable: true
+                    description: Present if no recommendations were generated
+                    properties:
+                      reason:
+                        type: string
+                        example: Expected alpha does not exceed cost by safe margin
+                      suggestion:
+                        type: string
+                        example: Consider relaxing turnover cap or reviewing constraint settings
+        '400':
+          description: Run not finalized yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RUN_NOT_FINALIZED
+                message: Recommendations not available. Run status is STAGED. Finalization at month-end (T).
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /runs/{runId}/exclusions:
+    get:
+      tags:
+        - Recommendations
+      summary: Get run exclusions
+      description: Returns stocks that were analyzed but excluded from recommendations with human-readable reasons.
+      operationId: getRunExclusions
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Exclusions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                    format: uuid
+                  exclusionCount:
+                    type: integer
+                    example: 28
+                  exclusions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Exclusion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /runs/{runId}/exclusions/export:
+    get:
+      tags:
+        - Recommendations
+      summary: Export exclusions as CSV
+      description: Downloads exclusions list in CSV format for record-keeping.
+      operationId: exportExclusions
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: CSV file generated successfully
+          content:
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  symbol,reason,reasonCode,timestamp
+                  AAPL,Earnings announcement in 36 hours,EARNINGS_PROXIMITY,2025-10-30T14:30:00Z
+                  MSFT,Liquidity below floor (ADV < threshold),LIQUIDITY_FLOOR,2025-10-30T14:30:00Z
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /runs/{runId}/report:
+    get:
+      tags:
+        - Recommendations
+      summary: Download comprehensive month-end report
+      description: |
+        Generates downloadable report (HTML or PDF format) with recommendations summary, exclusions, constraint settings,
+        cost analysis, attribution breakdown, and legal disclaimer.
+      operationId: getRunReport
+      parameters:
+        - $ref: '#/components/parameters/RunId'
+        - name: format
+          in: query
+          description: Report format
+          schema:
+            type: string
+            enum: [html, pdf]
+            default: pdf
+      responses:
+        '200':
+          description: Report generated successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== FACTOR ANALYSIS ====================
+  /portfolios/{portfolioId}/factors:
+    get:
+      tags:
+        - Factor Analysis
+      summary: Get portfolio factor heatmap
+      description: |
+        Returns factor scores (Value, Momentum, Quality, Revisions) for all holdings.
+        Scores are sector-normalized to avoid accidental sector bets.
+      operationId: getPortfolioFactors
+      parameters:
+        - $ref: '#/components/parameters/PortfolioId'
+      responses:
+        '200':
+          description: Factor scores retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolioId:
+                    type: string
+                    format: uuid
+                  calculationTimestamp:
+                    type: string
+                    format: date-time
+                    description: When factor scores were last calculated
+                    example: 2025-10-30T09:00:00Z
+                  factorModelVersion:
+                    type: string
+                    description: Semantic version of factor calculation model
+                    example: 1.2.0
+                  holdings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HoldingFactorScores'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /holdings/{holdingId}/factors:
+    get:
+      tags:
+        - Factor Analysis
+      summary: Get factor breakdown for single holding
+      description: Returns detailed factor component breakdown and historical trends.
+      operationId: getHoldingFactors
+      parameters:
+        - $ref: '#/components/parameters/HoldingId'
+      responses:
+        '200':
+          description: Factor breakdown retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FactorBreakdown'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== BACKTESTING ====================
+  /backtests:
+    post:
+      tags:
+        - Backtesting
+      summary: Run historical performance backtest
+      description: |
+        Simulates strategy performance over historical period using current constraints.
+        Returns equity curve, statistics, and verdict on beating equal-weight benchmark.
+        Rate limited to 10 backtests per hour per user.
+      operationId: createBacktest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - portfolioId
+                - universeId
+                - startDate
+                - endDate
+              properties:
+                portfolioId:
+                  type: string
+                  format: uuid
+                  description: Portfolio whose constraints to use
+                universeId:
+                  type: string
+                  format: uuid
+                  description: Investment universe to backtest
+                startDate:
+                  type: string
+                  format: date
+                  description: Backtest start date (minimum 2 years of data required)
+                  example: 2023-01-01
+                endDate:
+                  type: string
+                  format: date
+                  description: Backtest end date
+                  example: 2025-10-30
+                constraints:
+                  $ref: '#/components/schemas/ConstraintSet'
+                  description: Optional custom constraints (defaults to portfolio's current constraints)
+      responses:
+        '202':
+          description: Backtest initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backtestId:
+                    type: string
+                    format: uuid
+                    example: 750e8400-e29b-41d4-a716-446655440000
+                  status:
+                    type: string
+                    enum: [QUEUED, RUNNING]
+                    example: QUEUED
+                  estimatedCompletionTime:
+                    type: string
+                    format: date-time
+                    example: 2025-10-30T15:05:00Z
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /backtests/{backtestId}:
+    get:
+      tags:
+        - Backtesting
+      summary: Get backtest results
+      description: Returns performance metrics, equity curve, and verdict when backtest completes.
+      operationId: getBacktest
+      parameters:
+        - name: backtestId
+          in: path
+          required: true
+          description: Backtest identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Backtest results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /constraints/sensitivity:
+    post:
+      tags:
+        - Backtesting
+      summary: Preview constraint sensitivity
+      description: |
+        Shows expected impact of constraint change on turnover and pick count without saving or running full backtest.
+        Useful for quick "what-if" analysis.
+      operationId: analyzeConstraintSensitivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - portfolioId
+                - baseConstraints
+                - adjustedConstraints
+              properties:
+                portfolioId:
+                  type: string
+                  format: uuid
+                baseConstraints:
+                  $ref: '#/components/schemas/ConstraintSet'
+                  description: Current constraints
+                adjustedConstraints:
+                  $ref: '#/components/schemas/ConstraintSet'
+                  description: Modified constraints to test
+      responses:
+        '200':
+          description: Sensitivity analysis completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SensitivityAnalysis'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== DATA SOURCES ====================
+  /data-sources:
+    get:
+      tags:
+        - Data Sources
+      summary: Get data freshness indicators
+      description: Returns last update timestamps and health status for all data sources (prices, fundamentals, estimates).
+      operationId: getDataSources
+      responses:
+        '200':
+          description: Data sources retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataSource'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /data-sources/{sourceId}/health:
+    get:
+      tags:
+        - Data Sources
+      summary: Get detailed health check for data source
+      description: Returns detailed diagnostic information including recent error rates and refresh history.
+      operationId: getDataSourceHealth
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          description: Data source identifier
+          schema:
+            type: string
+            enum: [prices, fundamentals, estimates, calendar, fx-rates]
+      responses:
+        '200':
+          description: Health check retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceHealth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ==================== COMPLIANCE ====================
+  /users/me/disclaimer:
+    post:
+      tags:
+        - Compliance
+      summary: Acknowledge disclaimer
+      description: Records user's acceptance of legal disclaimer. Required before accessing recommendations.
+      operationId: acknowledgeDisclaimer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accepted
+              properties:
+                accepted:
+                  type: boolean
+                  description: Must be true to acknowledge
+                  example: true
+                disclaimerVersion:
+                  type: string
+                  description: Version of disclaimer being accepted
+                  example: 1.0
+      responses:
+        '200':
+          description: Disclaimer acknowledged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                    example: true
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2025-10-30T14:30:00Z
+                  version:
+                    type: string
+                    example: 1.0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Compliance
+      summary: Get disclaimer acknowledgment status
+      description: Returns whether user has acknowledged disclaimer and when.
+      operationId: getDisclaimerStatus
+      responses:
+        '200':
+          description: Disclaimer status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  acknowledged:
+                    type: boolean
+                    example: true
+                  timestamp:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    example: 2025-10-30T14:30:00Z
+                  version:
+                    type: string
+                    nullable: true
+                    example: 1.0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# ==================== COMPONENTS ====================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login endpoint
+
+  parameters:
+    PortfolioId:
+      name: portfolioId
+      in: path
+      required: true
+      description: Portfolio identifier
+      schema:
+        type: string
+        format: uuid
+
+    HoldingId:
+      name: holdingId
+      in: path
+      required: true
+      description: Holding identifier
+      schema:
+        type: string
+        format: uuid
+
+    RunId:
+      name: runId
+      in: path
+      required: true
+      description: Recommendation run identifier
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # ==================== CORE ENTITIES ====================
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: investor@example.com
+        baseCurrency:
+          type: string
+          enum: [USD, EUR, GBP, CAD, AUD, JPY]
+          example: USD
+        role:
+          type: string
+          enum: [OWNER, VIEWER, SERVICE]
+          description: User's role for access control
+          example: OWNER
+        emailVerified:
+          type: boolean
+          example: true
+        notificationPreferences:
+          $ref: '#/components/schemas/NotificationPreferences'
+        disclaimerAcknowledged:
+          type: boolean
+          example: true
+        disclaimerAcknowledgedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2025-10-30T14:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-01-15T10:00:00Z
+
+    NotificationPreferences:
+      type: object
+      properties:
+        emailEnabled:
+          type: boolean
+          description: Receive email notifications
+          example: true
+        t3PreCompute:
+          type: boolean
+          description: Notify at T-3 (scores calculated)
+          example: true
+        t1Staged:
+          type: boolean
+          description: Notify at T-1 (recommendations staged)
+          example: true
+        tFinalized:
+          type: boolean
+          description: Notify at T (recommendations finalized)
+          example: true
+        dataStaleAlerts:
+          type: boolean
+          description: Notify when data sources are stale
+          example: true
+
+    Portfolio:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+          format: uuid
+          example: 650e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          example: My Investment Portfolio
+        description:
+          type: string
+          nullable: true
+          example: Long-term growth portfolio
+        userId:
+          type: string
+          format: uuid
+        universe:
+          $ref: '#/components/schemas/Universe'
+        currentValue:
+          type: number
+          format: double
+          description: Current market value in base currency
+          example: 125000.50
+        cashBalance:
+          type: number
+          format: double
+          description: Cash balance in base currency
+          example: 5000.00
+        totalValue:
+          type: number
+          format: double
+          description: Holdings value + cash balance
+          example: 130000.50
+        unrealizedPL:
+          type: number
+          format: double
+          description: Unrealized profit/loss in base currency
+          example: 12500.75
+        unrealizedPLPercent:
+          type: number
+          format: float
+          description: Unrealized P/L percentage
+          example: 10.65
+        holdingCount:
+          type: integer
+          description: Number of holdings
+          example: 45
+        universeCoveragePercent:
+          type: number
+          format: float
+          description: Percentage of holdings covered by selected universe (0-100)
+          example: 87.5
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PortfolioSummary:
+      type: object
+      description: Lightweight portfolio representation for list views
+      properties:
+        portfolioId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: My Investment Portfolio
+        totalValue:
+          type: number
+          format: double
+          example: 130000.50
+        unrealizedPLPercent:
+          type: number
+          format: float
+          example: 10.65
+        holdingCount:
+          type: integer
+          example: 45
+        lastRunDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date of most recent recommendation run
+          example: 2025-10-30T09:00:00Z
+
+    PortfolioPerformance:
+      type: object
+      properties:
+        portfolioId:
+          type: string
+          format: uuid
+        period:
+          type: string
+          example: 1M
+        portfolioReturn:
+          type: number
+          format: float
+          description: Portfolio return percentage for period
+          example: 3.45
+        benchmarkReturn:
+          type: number
+          format: float
+          description: Benchmark return percentage for period
+          example: 2.87
+        excessReturn:
+          type: number
+          format: float
+          description: Portfolio return minus benchmark return
+          example: 0.58
+        volatility:
+          type: number
+          format: float
+          description: Annualized volatility percentage
+          example: 15.2
+        sharpeRatio:
+          type: number
+          format: float
+          nullable: true
+          description: Risk-adjusted return metric
+          example: 1.23
+        topContributors:
+          type: array
+          description: Top 5 holdings contributing to performance
+          maxItems: 5
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+                example: AAPL
+              contributionPercent:
+                type: number
+                format: float
+                example: 0.85
+        topDetractors:
+          type: array
+          description: Top 5 holdings detracting from performance
+          maxItems: 5
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+                example: MSFT
+              contributionPercent:
+                type: number
+                format: float
+                example: -0.32
+
+    Holding:
+      type: object
+      properties:
+        holdingId:
+          type: string
+          format: uuid
+          example: 750e8400-e29b-41d4-a716-446655440000
+        portfolioId:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+          description: Stock ticker symbol
+          example: AAPL
+        quantity:
+          type: number
+          format: double
+          description: Number of shares
+          example: 100.0
+        costBasis:
+          type: number
+          format: double
+          description: Total cost basis in holding currency
+          example: 15000.00
+        averageCostPerShare:
+          type: number
+          format: double
+          description: Cost basis divided by quantity
+          example: 150.00
+        currency:
+          type: string
+          enum: [USD, EUR, GBP, CAD, AUD, JPY]
+          example: USD
+        acquisitionDate:
+          type: string
+          format: date
+          description: Date holding was acquired
+          example: 2023-01-15
+        currentPrice:
+          type: number
+          format: double
+          description: Current market price per share in holding currency
+          example: 175.50
+        currentValue:
+          type: number
+          format: double
+          description: Current market value (quantity × price) in holding currency
+          example: 17550.00
+        currentValueBaseCurrency:
+          type: number
+          format: double
+          description: Current value converted to base currency
+          example: 17550.00
+        unrealizedPL:
+          type: number
+          format: double
+          description: Unrealized profit/loss in base currency
+          example: 2550.00
+        unrealizedPLPercent:
+          type: number
+          format: float
+          description: Unrealized P/L percentage
+          example: 17.0
+        inUniverse:
+          type: boolean
+          description: Whether holding is in selected investment universe
+          example: true
+        sector:
+          type: string
+          nullable: true
+          description: GICS sector classification
+          example: Information Technology
+        priceUpdateTimestamp:
+          type: string
+          format: date-time
+          description: When price was last updated
+          example: 2025-10-30T16:00:00Z
+
+    HoldingInput:
+      type: object
+      required:
+        - symbol
+        - quantity
+        - costBasis
+        - currency
+      properties:
+        symbol:
+          type: string
+          pattern: '^[A-Z]{1,5}$'
+          description: Stock ticker symbol (uppercase, 1-5 characters)
+          example: AAPL
+        quantity:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Number of shares (must be positive)
+          example: 100.0
+        costBasis:
+          type: number
+          format: double
+          minimum: 0
+          description: Total cost basis (must be non-negative)
+          example: 15000.00
+        currency:
+          type: string
+          enum: [USD, EUR, GBP, CAD, AUD, JPY]
+          example: USD
+        acquisitionDate:
+          type: string
+          format: date
+          description: Date holding was acquired (defaults to today)
+          example: 2023-01-15
+
+    HoldingDetail:
+      allOf:
+        - $ref: '#/components/schemas/Holding'
+        - type: object
+          properties:
+            factorScores:
+              $ref: '#/components/schemas/FactorScores'
+            recentPerformance:
+              type: object
+              properties:
+                oneDay:
+                  type: number
+                  format: float
+                  example: 1.2
+                oneWeek:
+                  type: number
+                  format: float
+                  example: 3.5
+                oneMonth:
+                  type: number
+                  format: float
+                  example: 7.8
+
+    Universe:
+      type: object
+      properties:
+        universeId:
+          type: string
+          format: uuid
+          example: 850e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          description: Universe display name
+          example: S&P 500
+        description:
+          type: string
+          description: Universe description
+          example: Large-cap US equities
+        constituentCount:
+          type: integer
+          description: Number of stocks in universe
+          example: 503
+        benchmarkIndex:
+          type: string
+          description: Associated benchmark index
+          example: ^GSPC
+        marketCapRange:
+          type: object
+          properties:
+            min:
+              type: number
+              format: double
+              description: Minimum market cap in billions USD
+              example: 10.0
+            max:
+              type: number
+              format: double
+              nullable: true
+              description: Maximum market cap in billions USD (null for no cap)
+              example: null
+
+    UniverseDetail:
+      allOf:
+        - $ref: '#/components/schemas/Universe'
+        - type: object
+          properties:
+            constituents:
+              type: array
+              description: Stock symbols in universe
+              items:
+                type: string
+                example: AAPL
+            sectorBreakdown:
+              type: array
+              description: Sector weightings in universe
+              items:
+                type: object
+                properties:
+                  sector:
+                    type: string
+                    example: Information Technology
+                  weightPercent:
+                    type: number
+                    format: float
+                    example: 28.5
+            lastUpdated:
+              type: string
+              format: date-time
+              description: When constituent list was last updated
+              example: 2025-10-01T00:00:00Z
+
+    ConstraintSet:
+      type: object
+      properties:
+        constraintSetId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier (null for unsaved previews)
+        version:
+          type: integer
+          description: Version number (increments on each save)
+          example: 3
+        maxNameWeightLargeCap:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Maximum position size for large-cap stocks (percentage)
+          example: 5.0
+        maxNameWeightMidCap:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Maximum position size for mid-cap stocks (percentage)
+          example: 2.0
+        maxSectorExposure:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Maximum sector concentration (percentage)
+          example: 20.0
+        turnoverCap:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Maximum monthly turnover (percentage)
+          example: 25.0
+        weightDeadband:
+          type: number
+          format: float
+          minimum: 0
+          description: Minimum weight change to trigger rebalance (basis points)
+          example: 30.0
+        spreadThresholdBps:
+          type: number
+          format: float
+          minimum: 0
+          description: Maximum allowed bid-ask spread (basis points)
+          example: 50.0
+        liquidityFloor:
+          type: number
+          format: double
+          minimum: 0
+          description: Minimum average daily volume (shares)
+          example: 100000.0
+        earningsBlackoutHours:
+          type: integer
+          minimum: 0
+          maximum: 168
+          description: Hours before earnings to exclude stock
+          example: 48
+        participationCapByTier:
+          type: object
+          description: Maximum participation as percentage of ADV by liquidity tier
+          properties:
+            highLiquidity:
+              type: number
+              format: float
+              description: ADV > $50M
+              example: 10.0
+            mediumLiquidity:
+              type: number
+              format: float
+              description: ADV $10M-$50M
+              example: 5.0
+            lowLiquidity:
+              type: number
+              format: float
+              description: ADV < $10M
+              example: 2.0
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-10-30T14:00:00Z
+
+    ConstraintPreview:
+      type: object
+      description: Impact simulation of constraint changes
+      properties:
+        currentConstraints:
+          $ref: '#/components/schemas/ConstraintSet'
+        proposedConstraints:
+          $ref: '#/components/schemas/ConstraintSet'
+        impact:
+          type: object
+          properties:
+            expectedPickCountChange:
+              type: integer
+              description: Change in number of recommendations (positive or negative)
+              example: -3
+            expectedTurnoverChange:
+              type: number
+              format: float
+              description: Change in turnover percentage
+              example: -5.2
+            expectedCostChange:
+              type: number
+              format: double
+              description: Change in estimated transaction cost in base currency
+              example: -125.50
+            positionsAffected:
+              type: array
+              description: Holdings that would be excluded or reduced under new constraints
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                    example: AAPL
+                  currentWeight:
+                    type: number
+                    format: float
+                    example: 6.5
+                  proposedWeight:
+                    type: number
+                    format: float
+                    example: 5.0
+                  reason:
+                    type: string
+                    example: Exceeds new max name weight (5%)
+
+    Run:
+      type: object
+      properties:
+        runId:
+          type: string
+          format: uuid
+          example: 950e8400-e29b-41d4-a716-446655440000
+        portfolioId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, PRE_COMPUTE, STAGED, FINALIZED, FAILED, CANCELLED]
+          description: |
+            Run execution state:
+            - QUEUED: Waiting to start
+            - RUNNING: Currently executing
+            - PRE_COMPUTE: T-3 state (factor scores calculated)
+            - STAGED: T-1 state (recommendations staged for review)
+            - FINALIZED: T state (recommendations ready)
+            - FAILED: Execution failed
+            - CANCELLED: Manually cancelled
+          example: FINALIZED
+        runType:
+          type: string
+          enum: [SCHEDULED_MONTH_END, MANUAL_OFF_CYCLE]
+          description: Whether run is scheduled month-end or manual off-cycle
+          example: SCHEDULED_MONTH_END
+        constraintSetSnapshot:
+          $ref: '#/components/schemas/ConstraintSet'
+          description: Snapshot of constraints used for this run (immutable)
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Execution progress (0-100)
+          example: 100
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2025-10-30T09:00:00Z
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2025-10-30T09:08:00Z
+        errorMessage:
+          type: string
+          nullable: true
+          description: Human-readable error message if status is FAILED
+        nextStateTransition:
+          type: string
+          format: date-time
+          nullable: true
+          description: When run will transition to next state (for scheduled runs)
+          example: 2025-11-28T00:00:00Z
+
+    RunSummary:
+      type: object
+      description: Lightweight run representation for list views
+      properties:
+        runId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, PRE_COMPUTE, STAGED, FINALIZED, FAILED, CANCELLED]
+        runType:
+          type: string
+          enum: [SCHEDULED_MONTH_END, MANUAL_OFF_CYCLE]
+        recommendationCount:
+          type: integer
+          nullable: true
+          description: Number of recommendations (null if not finalized)
+          example: 12
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2025-10-30T09:08:00Z
+
+    Recommendation:
+      type: object
+      properties:
+        recommendationId:
+          type: string
+          format: uuid
+          example: a50e8400-e29b-41d4-a716-446655440000
+        runId:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+          description: Stock ticker symbol
+          example: AAPL
+        rank:
+          type: integer
+          minimum: 1
+          description: Priority rank (1 = highest conviction)
+          example: 1
+        targetWeight:
+          type: number
+          format: float
+          minimum: 0
+          description: Recommended position size (percentage of portfolio)
+          example: 4.5
+        confidenceScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Confidence in recommendation (0-100)
+          example: 85
+        expectedCost:
+          type: number
+          format: double
+          description: Estimated transaction cost in base currency
+          example: 45.75
+        expectedReturn:
+          type: number
+          format: float
+          nullable: true
+          description: Expected return percentage (educational estimate)
+          example: 8.5
+        explanation:
+          type: string
+          description: Plain-language explanation of recommendation
+          example: Strong value and momentum scores with positive analyst revisions. Low accrual quality and solid ROE indicate sustainable earnings.
+        topDrivers:
+          type: array
+          description: Top 3 factor drivers for recommendation
+          maxItems: 3
+          items:
+            type: object
+            properties:
+              factor:
+                type: string
+                enum: [VALUE, MOMENTUM, QUALITY, REVISIONS]
+                example: VALUE
+              score:
+                type: number
+                format: float
+                description: Sector-normalized score (-3 to +3 typical range)
+                example: 2.15
+              description:
+                type: string
+                example: Earnings yield in 95th percentile within sector
+        constraintImpacts:
+          type: array
+          description: How constraints affect this recommendation
+          items:
+            type: object
+            properties:
+              constraint:
+                type: string
+                example: maxNameWeightLargeCap
+              impact:
+                type: string
+                example: Position capped at 5% per large-cap name limit
+        riskContribution:
+          type: number
+          format: float
+          description: Contribution to portfolio volatility (percentage points)
+          example: 0.35
+        changeIndicator:
+          type: string
+          enum: [NEW, INCREASED, DECREASED, UNCHANGED, REMOVED]
+          nullable: true
+          description: Change from previous run
+          example: NEW
+        sector:
+          type: string
+          example: Information Technology
+
+    Exclusion:
+      type: object
+      properties:
+        exclusionId:
+          type: string
+          format: uuid
+        runId:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+          example: MSFT
+        reasonCode:
+          type: string
+          enum: [LIQUIDITY_FLOOR, EARNINGS_PROXIMITY, SPREAD_THRESHOLD, SECTOR_CAP_BREACH, TURNOVER_CAP_BREACH, DATA_INSUFFICIENT]
+          description: Machine-readable exclusion reason
+          example: EARNINGS_PROXIMITY
+        reason:
+          type: string
+          description: Human-readable explanation
+          example: Earnings announcement in 36 hours. Excluded per earnings blackout window setting (48 hours).
+        timestamp:
+          type: string
+          format: date-time
+          example: 2025-10-30T09:08:00Z
+
+    FactorScores:
+      type: object
+      description: Factor scores for a single holding
+      properties:
+        value:
+          type: number
+          format: float
+          description: Value factor score (sector-normalized, -3 to +3 typical)
+          example: 1.85
+        momentum:
+          type: number
+          format: float
+          description: Momentum factor score (sector-normalized)
+          example: 0.45
+        quality:
+          type: number
+          format: float
+          description: Quality factor score (sector-normalized)
+          example: 1.22
+        revisions:
+          type: number
+          format: float
+          description: Analyst revisions factor score (sector-normalized)
+          example: 0.78
+        composite:
+          type: number
+          format: float
+          description: Composite score combining all factors
+          example: 1.15
+        calculatedAt:
+          type: string
+          format: date-time
+          description: When scores were calculated
+          example: 2025-10-30T09:00:00Z
+
+    HoldingFactorScores:
+      type: object
+      description: Factor scores with holding context for heatmap
+      properties:
+        holdingId:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+          example: AAPL
+        sector:
+          type: string
+          example: Information Technology
+        scores:
+          $ref: '#/components/schemas/FactorScores'
+
+    FactorBreakdown:
+      type: object
+      description: Detailed factor component breakdown for single holding
+      properties:
+        holdingId:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+          example: AAPL
+        factorModelVersion:
+          type: string
+          example: 1.2.0
+        valueComponents:
+          type: object
+          properties:
+            earningsYield:
+              type: number
+              format: float
+              description: E/P ratio
+              example: 0.045
+            bookToMarket:
+              type: number
+              format: float
+              description: B/M ratio
+              example: 0.32
+            fcfYield:
+              type: number
+              format: float
+              description: Free cash flow yield
+              example: 0.038
+        momentumComponents:
+          type: object
+          properties:
+            return12m1m:
+              type: number
+              format: float
+              description: 12-month return excluding last month
+              example: 15.8
+            return6m1m:
+              type: number
+              format: float
+              description: 6-month return excluding last month
+              example: 8.3
+        qualityComponents:
+          type: object
+          properties:
+            roe:
+              type: number
+              format: float
+              description: Return on equity
+              example: 28.5
+            roic:
+              type: number
+              format: float
+              description: Return on invested capital
+              example: 32.1
+            grossMargin:
+              type: number
+              format: float
+              description: Gross profit margin
+              example: 42.3
+            accruals:
+              type: number
+              format: float
+              description: Accrual ratio (lower is better)
+              example: 0.02
+        revisionsComponents:
+          type: object
+          properties:
+            estimateChanges1m:
+              type: integer
+              description: Net estimate revisions (up minus down) in last month
+              example: 5
+            estimateChanges3m:
+              type: integer
+              description: Net estimate revisions in last 3 months
+              example: 12
+            surprisePercent:
+              type: number
+              format: float
+              description: Last earnings surprise percentage
+              example: 3.2
+
+    BacktestResult:
+      type: object
+      properties:
+        backtestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, COMPLETED, FAILED]
+          example: COMPLETED
+        portfolioId:
+          type: string
+          format: uuid
+        universeId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+          example: 2023-01-01
+        endDate:
+          type: string
+          format: date
+          example: 2025-10-30
+        constraints:
+          $ref: '#/components/schemas/ConstraintSet'
+        statistics:
+          type: object
+          properties:
+            cagr:
+              type: number
+              format: float
+              description: Compound annual growth rate (percentage)
+              example: 12.5
+            volatility:
+              type: number
+              format: float
+              description: Annualized volatility (percentage)
+              example: 18.2
+            maxDrawdown:
+              type: number
+              format: float
+              description: Maximum peak-to-trough decline (percentage)
+              example: -15.3
+            sharpeRatio:
+              type: number
+              format: float
+              description: Risk-adjusted return metric
+              example: 0.89
+            hitRate:
+              type: number
+              format: float
+              description: Percentage of winning trades
+              example: 58.3
+            averageTurnover:
+              type: number
+              format: float
+              description: Average monthly turnover (percentage)
+              example: 22.8
+            totalCost:
+              type: number
+              format: double
+              description: Total transaction costs in base currency
+              example: 5432.10
+        benchmarkStatistics:
+          type: object
+          description: Equal-weight benchmark performance
+          properties:
+            cagr:
+              type: number
+              format: float
+              example: 10.2
+            volatility:
+              type: number
+              format: float
+              example: 16.5
+            maxDrawdown:
+              type: number
+              format: float
+              example: -12.1
+            sharpeRatio:
+              type: number
+              format: float
+              example: 0.75
+        verdict:
+          type: object
+          properties:
+            beatBenchmark:
+              type: boolean
+              description: Whether strategy beat equal-weight benchmark after costs
+              example: true
+            outperformancePercent:
+              type: number
+              format: float
+              description: Percentage outperformance (or underperformance if negative)
+              example: 2.3
+            summary:
+              type: string
+              description: One-line verdict
+              example: Beat equal weight of selected names after costs? Yes, by 2.3% CAGR.
+        equityCurve:
+          type: array
+          description: Daily portfolio values
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                example: 2023-01-15
+              strategyValue:
+                type: number
+                format: double
+                description: Strategy portfolio value
+                example: 102450.75
+              benchmarkValue:
+                type: number
+                format: double
+                description: Benchmark portfolio value
+                example: 101200.50
+        turnoverHistory:
+          type: array
+          description: Monthly turnover values
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+                format: date
+                description: Month (YYYY-MM)
+                example: 2023-01
+              turnoverPercent:
+                type: number
+                format: float
+                example: 23.5
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2025-10-30T15:05:00Z
+
+    SensitivityAnalysis:
+      type: object
+      description: Quick impact analysis of constraint adjustment
+      properties:
+        portfolioId:
+          type: string
+          format: uuid
+        constraintChanged:
+          type: string
+          description: Which constraint was modified
+          example: turnoverCap
+        baseValue:
+          type: number
+          format: float
+          description: Original constraint value
+          example: 25.0
+        adjustedValue:
+          type: number
+          format: float
+          description: New constraint value
+          example: 20.0
+        expectedImpact:
+          type: object
+          properties:
+            pickCountChange:
+              type: integer
+              description: Expected change in recommendation count
+              example: -2
+            turnoverChange:
+              type: number
+              format: float
+              description: Expected change in turnover percentage
+              example: -5.0
+            costChange:
+              type: number
+              format: double
+              description: Expected change in transaction cost
+              example: -75.25
+        explanation:
+          type: string
+          description: Plain-language explanation of expected impact
+          example: Reducing turnover cap from 25% to 20% is expected to decrease recommendation count by 2 positions, reducing turnover by 5% and saving approximately $75 in transaction costs.
+
+    DataSource:
+      type: object
+      properties:
+        sourceId:
+          type: string
+          enum: [prices, fundamentals, estimates, calendar, fx-rates]
+          example: prices
+        name:
+          type: string
+          description: Display name
+          example: End-of-Day Prices
+        status:
+          type: string
+          enum: [CURRENT, STALE, ERROR]
+          description: |
+            Health status:
+            - CURRENT: Data is fresh
+            - STALE: Data exceeds staleness threshold
+            - ERROR: Data feed experiencing errors
+          example: CURRENT
+        lastUpdateTimestamp:
+          type: string
+          format: date-time
+          description: When data was last successfully updated
+          example: 2025-10-30T16:00:00Z
+        stalenessThresholdHours:
+          type: integer
+          description: Hours before data is considered stale
+          example: 24
+        nextExpectedUpdate:
+          type: string
+          format: date-time
+          nullable: true
+          description: When next update is expected
+          example: 2025-10-31T16:00:00Z
+
+    DataSourceHealth:
+      allOf:
+        - $ref: '#/components/schemas/DataSource'
+        - type: object
+          properties:
+            recentErrorRate:
+              type: number
+              format: float
+              description: Error rate in last 24 hours (0-100 percentage)
+              example: 0.5
+            averageRefreshTime:
+              type: integer
+              description: Average time to refresh in seconds
+              example: 45
+            refreshHistory:
+              type: array
+              description: Recent refresh attempts
+              maxItems: 10
+              items:
+                type: object
+                properties:
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: 2025-10-30T16:00:00Z
+                  success:
+                    type: boolean
+                    example: true
+                  durationSeconds:
+                    type: integer
+                    example: 42
+                  errorMessage:
+                    type: string
+                    nullable: true
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid constraint value
+        details:
+          type: array
+          description: Additional error details (validation errors, field-level messages)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: turnoverCap
+              message:
+                type: string
+                example: Turnover cap must be between 0 and 100
+        timestamp:
+          type: string
+          format: date-time
+          example: 2025-10-30T14:30:00Z
+        requestId:
+          type: string
+          format: uuid
+          description: Request identifier for debugging
+          example: b50e8400-e29b-41d4-a716-446655440000
+
+  responses:
+    BadRequest:
+      description: Invalid request (validation errors, malformed input)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VALIDATION_ERROR
+            message: Request validation failed
+            details:
+              - field: quantity
+                message: Quantity must be greater than 0
+              - field: costBasis
+                message: Cost basis cannot be negative
+            timestamp: 2025-10-30T14:30:00Z
+            requestId: b50e8400-e29b-41d4-a716-446655440000
+
+    Unauthorized:
+      description: Authentication required or token invalid/expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHORIZED
+            message: Authentication token is invalid or expired
+            timestamp: 2025-10-30T14:30:00Z
+            requestId: b50e8400-e29b-41d4-a716-446655440000
+
+    Forbidden:
+      description: Insufficient permissions (e.g., Viewer role attempting Owner-only operation)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: FORBIDDEN
+            message: Insufficient permissions. Owner role required for this operation.
+            timestamp: 2025-10-30T14:30:00Z
+            requestId: b50e8400-e29b-41d4-a716-446655440000
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Portfolio not found
+            timestamp: 2025-10-30T14:30:00Z
+            requestId: b50e8400-e29b-41d4-a716-446655440000
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_ERROR
+            message: An unexpected error occurred. Please try again later.
+            timestamp: 2025-10-30T14:30:00Z
+            requestId: b50e8400-e29b-41d4-a716-446655440000

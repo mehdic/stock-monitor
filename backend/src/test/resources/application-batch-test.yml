@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:15:///testdb?TC_DAEMON=true
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+
+  liquibase:
+    enabled: false
+
+  # Enable batch for these tests
+  batch:
+    job:
+      enabled: false  # Disable auto-start of batch jobs in tests
+    jdbc:
+      initialize-schema: always
+      platform: postgresql
+
+  # Disable Redis, Mail, WebSocket for tests
+  data:
+    redis:
+      repositories:
+        enabled: false
+  cache:
+    type: none
+  mail:
+    host: localhost
+    port: 25
+  websocket:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.stockmonitor: INFO
+    org.testcontainers: INFO
+    org.springframework.test: INFO
+    org.hibernate: WARN
+    org.springframework.batch: INFO
+
+app:
+  batch:
+    enabled: true
+  jwt:
+    secret: dGVzdHNlY3JldGtleWZvcnVuaXR0ZXN0c29ubHltdXN0YmVhdGxlYXN0MjU2Yml0c2xvbmdmb3JoczI1NmFsZ29yaXRobQ==
+    expiration-ms: 3600000
