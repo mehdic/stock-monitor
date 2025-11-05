@@ -5,8 +5,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.repository.RecommendationRepository;
+import com.stockmonitor.repository.RecommendationRunRepository;
+import com.stockmonitor.repository.PortfolioRepository;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,9 @@ import org.springframework.http.MediaType;
 class RecommendationContractTest extends BaseIntegrationTest {
 
   @Autowired private ObjectMapper objectMapper;
+  @Autowired private RecommendationRepository recommendationRepository;
+  @Autowired private RecommendationRunRepository recommendationRunRepository;
+  @Autowired private PortfolioRepository portfolioRepository;
 
   private String authToken;
   private String portfolioId;
@@ -37,6 +44,15 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
     // Create test portfolio
     testDataHelper.createTestPortfolio(java.util.UUID.fromString(portfolioId), userId);
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    // Delete in reverse dependency order (child → parent)
+    recommendationRepository.deleteAll();
+    recommendationRunRepository.deleteAll();
+    portfolioRepository.deleteAll();
+    userRepository.deleteAll();
   }
 
   @Test

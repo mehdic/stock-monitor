@@ -4,6 +4,7 @@ import com.stockmonitor.BaseIntegrationTest;
 import com.stockmonitor.dto.ReportDTO;
 import com.stockmonitor.model.RecommendationRun;
 import com.stockmonitor.repository.RecommendationRunRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,7 @@ public class ReportContractTest extends BaseIntegrationTest {
         // Create a completed recommendation run for testing
         RecommendationRun run = RecommendationRun.builder()
                 .userId(UUID.randomUUID())
+                .portfolioId(UUID.randomUUID())
                 .universeId(UUID.randomUUID())
                 .constraintSetId(UUID.randomUUID())
                 .runType("SCHEDULED")
@@ -60,6 +62,11 @@ public class ReportContractTest extends BaseIntegrationTest {
 
         run = runRepository.save(run);
         testRunId = run.getId();
+    }
+
+    @AfterEach
+    public void cleanupTestData() {
+        runRepository.deleteAll();
     }
 
     @Test
@@ -237,6 +244,7 @@ public class ReportContractTest extends BaseIntegrationTest {
         // Arrange - Create a run with RUNNING status
         RecommendationRun runningRun = RecommendationRun.builder()
                 .userId(UUID.randomUUID())
+                .portfolioId(UUID.randomUUID())
                 .universeId(UUID.randomUUID())
                 .constraintSetId(UUID.randomUUID())
                 .runType("SCHEDULED")

@@ -6,6 +6,7 @@ import com.stockmonitor.dto.NotificationDTO;
 import com.stockmonitor.dto.RunStatusUpdateDTO;
 import com.stockmonitor.model.RecommendationRun;
 import com.stockmonitor.repository.RecommendationRunRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +72,7 @@ public class WebSocketContractTest extends BaseIntegrationTest {
         testUserId = UUID.randomUUID();
         RecommendationRun run = RecommendationRun.builder()
                 .userId(testUserId)
+                .portfolioId(UUID.randomUUID())
                 .universeId(UUID.randomUUID())
                 .constraintSetId(UUID.randomUUID())
                 .runType("SCHEDULED")
@@ -81,6 +83,11 @@ public class WebSocketContractTest extends BaseIntegrationTest {
 
         run = runRepository.save(run);
         testRunId = run.getId();
+    }
+
+    @AfterEach
+    public void cleanupTestData() {
+        runRepository.deleteAll();
     }
 
     /**
