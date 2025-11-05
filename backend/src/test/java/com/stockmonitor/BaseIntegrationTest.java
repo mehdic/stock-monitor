@@ -1,6 +1,7 @@
 package com.stockmonitor;
 
 import com.stockmonitor.config.TestSecurityConfig;
+import com.stockmonitor.helper.TestDataHelper;
 import com.stockmonitor.repository.UserRepository;
 import com.stockmonitor.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,6 +63,7 @@ public abstract class BaseIntegrationTest {
   @Autowired protected JwtService jwtService;
   @Autowired protected UserRepository userRepository;
   @Autowired protected PasswordEncoder passwordEncoder;
+  @Autowired protected TestDataHelper testDataHelper;
 
   @BeforeEach
   void setUp() {
@@ -71,23 +73,14 @@ public abstract class BaseIntegrationTest {
 
   /**
    * Generate a valid JWT token for testing.
+   * Creates user in a separate transaction to ensure visibility to HTTP requests.
    *
    * @param username the username to include in the token
    * @return a valid JWT token string
    */
   protected String generateTestToken(String username) {
-    // Create user in database if not exists
-    if (!userRepository.existsByEmail(username)) {
-      com.stockmonitor.model.User user =
-          com.stockmonitor.model.User.builder()
-              .email(username)
-              .passwordHash(passwordEncoder.encode("password"))
-              .firstName("Test")
-              .lastName("User")
-              .enabled(true)
-              .build();
-      userRepository.save(user);
-    }
+    // Create user in a new transaction so it's visible to HTTP requests
+    testDataHelper.createTestUser(username);
 
     UserDetails userDetails =
         User.builder().username(username).password("password").authorities(Collections.emptyList()).build();
