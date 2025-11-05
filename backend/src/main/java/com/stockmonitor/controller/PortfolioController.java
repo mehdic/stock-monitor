@@ -4,6 +4,7 @@ import com.stockmonitor.dto.HoldingsUploadResponse;
 import com.stockmonitor.dto.PerformanceMetricsDTO;
 import com.stockmonitor.dto.PortfolioDTO;
 import com.stockmonitor.model.Holding;
+import com.stockmonitor.repository.UserRepository;
 import com.stockmonitor.service.PerformanceAttributionService;
 import com.stockmonitor.service.PortfolioService;
 import java.time.LocalDate;
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +37,22 @@ public class PortfolioController {
 
   private final PortfolioService portfolioService;
   private final PerformanceAttributionService performanceAttributionService;
+  private final UserRepository userRepository;
+
+  @PostMapping
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<PortfolioDTO> createPortfolio() {
+    // Extract user ID from authentication context (don't trust request body)
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+    UUID userId = userRepository.findByEmail(userEmail)
+        .orElseThrow(() -> new IllegalStateException("User not found"))
+        .getId();
+
+    log.info("Create portfolio request for user: {}", userId);
+    PortfolioDTO portfolio = portfolioService.getOrCreatePortfolio(userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(portfolio);
+  }
 
   @GetMapping("/{id}")
   public ResponseEntity<PortfolioDTO> getPortfolio(@PathVariable("id") UUID id) {

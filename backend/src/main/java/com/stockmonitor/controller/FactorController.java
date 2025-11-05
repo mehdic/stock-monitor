@@ -1,9 +1,11 @@
 package com.stockmonitor.controller;
 
 import com.stockmonitor.dto.FactorScoreDTO;
+import com.stockmonitor.dto.HoldingFactorResponse;
 import com.stockmonitor.service.FactorService;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +33,13 @@ public class FactorController {
    */
   @GetMapping("/api/portfolios/{portfolioId}/factors")
   @PreAuthorize("hasRole('OWNER') or hasRole('VIEWER')")
-  public ResponseEntity<List<FactorScoreDTO>> getPortfolioFactors(@PathVariable UUID portfolioId) {
+  public ResponseEntity<List<HoldingFactorResponse>> getPortfolioFactors(@PathVariable UUID portfolioId) {
     log.info("Get factors for portfolio: {}", portfolioId);
     List<FactorScoreDTO> factors = factorService.getPortfolioFactors(portfolioId);
-    return ResponseEntity.ok(factors);
+    List<HoldingFactorResponse> responses = factors.stream()
+        .map(HoldingFactorResponse::from)
+        .collect(Collectors.toList());
+    return ResponseEntity.ok(responses);
   }
 
   /**
@@ -45,9 +50,10 @@ public class FactorController {
    */
   @GetMapping("/api/holdings/{holdingId}/factors")
   @PreAuthorize("hasRole('OWNER') or hasRole('VIEWER')")
-  public ResponseEntity<FactorScoreDTO> getHoldingFactors(@PathVariable UUID holdingId) {
+  public ResponseEntity<HoldingFactorResponse> getHoldingFactors(@PathVariable UUID holdingId) {
     log.info("Get factors for holding: {}", holdingId);
     FactorScoreDTO factors = factorService.getHoldingFactors(holdingId);
-    return ResponseEntity.ok(factors);
+    HoldingFactorResponse response = HoldingFactorResponse.from(factors);
+    return ResponseEntity.ok(response);
   }
 }

@@ -1,8 +1,13 @@
 package com.stockmonitor.service;
 
 import com.stockmonitor.dto.ExclusionDTO;
+import com.stockmonitor.model.Exclusion;
+import com.stockmonitor.model.RecommendationRun;
+import com.stockmonitor.repository.ExclusionRepository;
+import com.stockmonitor.repository.RecommendationRunRepository;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,9 +20,26 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ExclusionReasonService {
 
+  private final ExclusionRepository exclusionRepository;
+  private final RecommendationRunRepository recommendationRunRepository;
+
   public List<ExclusionDTO> getExclusionsForRun(UUID runId) {
-    // TODO: Query exclusions from database
-    return List.of();
+    log.debug("Fetching exclusions for run: {}", runId);
+
+    // Get the run to find the run date
+    RecommendationRun run = recommendationRunRepository.findById(runId).orElse(null);
+
+    List<Exclusion> exclusions = exclusionRepository.findByRunId(runId);
+
+    return exclusions.stream()
+        .map(exclusion -> ExclusionDTO.builder()
+            .symbol(exclusion.getSymbol())
+            .companyName(exclusion.getSymbol()) // Company name not stored in Exclusion, using symbol for now
+            .exclusionReasonCode(exclusion.getExclusionReasonCode())
+            .explanation(generateExplanation(exclusion.getExclusionReasonCode()))
+            .runDate(run != null ? run.getScheduledDate() : null)
+            .build())
+        .collect(Collectors.toList());
   }
 
   public String generateExplanation(String reasonCode, Object... params) {

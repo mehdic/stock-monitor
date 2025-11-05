@@ -19,6 +19,7 @@ public class RecommendationRunDTO {
   private UUID userId;
   private UUID universeId;
   private UUID constraintSetId;
+  private UUID portfolioId;
   private String runType;
   private String status;
   private LocalDate scheduledDate;
@@ -45,6 +46,7 @@ public class RecommendationRunDTO {
         .userId(run.getUserId())
         .universeId(run.getUniverseId())
         .constraintSetId(run.getConstraintSetId())
+        .portfolioId(run.getPortfolioId())
         .runType(run.getRunType())
         .status(run.getStatus())
         .scheduledDate(run.getScheduledDate())

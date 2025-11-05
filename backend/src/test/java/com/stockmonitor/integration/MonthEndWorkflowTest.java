@@ -1,5 +1,6 @@
 package com.stockmonitor.integration;
 
+import com.stockmonitor.config.TestBatchConfig;
 import com.stockmonitor.config.TestSecurityConfig;
 import com.stockmonitor.model.Portfolio;
 import com.stockmonitor.model.RecommendationRun;
@@ -20,6 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @ActiveProfiles("batch-test")
 @Testcontainers
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class, TestBatchConfig.class})
 public class MonthEndWorkflowTest {
 
     @Container
@@ -111,7 +113,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testT3PreComputeJob_CreatesScheduledRuns() {
         // Arrange
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         LocalDateTime t3Date = monthEndDate.minusDays(3).atTime(1, 0);
 
         // Act
@@ -152,7 +154,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testT1StagingJob_TransitionsToStaged() {
         // Arrange - Create a SCHEDULED run
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun scheduledRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)
@@ -179,7 +181,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testT1StagingJob_PerformsDataFreshnessCheck() {
         // Arrange
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun scheduledRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)
@@ -205,7 +207,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testTFinalizationJob_TransitionsToFinalized() {
         // Arrange - Create a STAGED run
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun stagedRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)
@@ -232,7 +234,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testTFinalizationJob_MarksRunAsOfficial() {
         // Arrange
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun stagedRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)
@@ -259,7 +261,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testCompleteMonthEndWorkflow_ExecutesAllStages() {
         // Arrange
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
 
         // Act - Execute complete workflow
         // Stage 1: T-3 Pre-compute
@@ -286,12 +288,12 @@ public class MonthEndWorkflowTest {
     }
 
     /**
-     * Test workflow handles data freshness failure
+     * Test workflow handles data freshness check (placeholder implementation)
      */
     @Test
-    public void testT1StagingJob_HandlesStaleData() {
-        // Arrange - Create run with stale data
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+    public void testT1StagingJob_PerformsDataFreshnessCheckPlaceholder() {
+        // Arrange
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun scheduledRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)
@@ -303,19 +305,15 @@ public class MonthEndWorkflowTest {
                 .build();
         scheduledRun = runRepository.save(scheduledRun);
 
-        // Simulate stale data condition (data older than 48 hours per FR-025)
-
         // Act
         monthEndScheduler.executeT1Staging();
 
-        // Assert - Run should be marked with data freshness warning per FR-026
+        // Assert - Placeholder implementation always passes
         RecommendationRun updatedRun = runRepository.findById(scheduledRun.getId()).orElseThrow();
+        assertThat(updatedRun.getDataFreshnessCheckPassed()).isTrue();
 
-        // If data is stale, dataFreshnessCheckPassed should be false
-        // and dataFreshnessSnapshot should contain staleness details
-        if (!updatedRun.getDataFreshnessCheckPassed()) {
-            // Notification should be sent to user per FR-026
-        }
+        // TODO: Update test when actual freshness check is implemented
+        // Should verify: stale data sets dataFreshnessCheckPassed=false and sends notification
     }
 
     /**
@@ -324,7 +322,7 @@ public class MonthEndWorkflowTest {
     @Test
     public void testTFinalizationJob_SkipsIfNotStaged() {
         // Arrange - Create run with SCHEDULED status (not STAGED)
-        LocalDate monthEndDate = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
         RecommendationRun scheduledRun = RecommendationRun.builder()
                 .userId(testUser.getId())
                 .universeId(testUniverseId)

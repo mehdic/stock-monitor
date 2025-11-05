@@ -34,6 +34,10 @@ public class RecommendationRun {
   private UUID universeId;
 
   @NotNull
+  @Column(name = "portfolio_id", nullable = false)
+  private UUID portfolioId;
+
+  @NotNull
   @Column(name = "constraint_set_id", nullable = false)
   private UUID constraintSetId;
 

@@ -72,7 +72,7 @@ public class MonthEndScheduler {
     public void executeT3PreCompute() {
         log.info("Starting T-3 pre-compute job for month-end recommendations");
 
-        LocalDate monthEndDate = getNextMonthEndDate();
+        LocalDate monthEndDate = getCurrentMonthEndDate();
         LocalDateTime scheduledFor = monthEndDate.atTime(1, 0);
 
         // Check idempotency: Don't create duplicate runs for this month-end
@@ -149,7 +149,7 @@ public class MonthEndScheduler {
     public void executeT1Staging() {
         log.info("Starting T-1 staging job for month-end recommendations");
 
-        LocalDate monthEndDate = getNextMonthEndDate();
+        LocalDate monthEndDate = getCurrentMonthEndDate();
         LocalDateTime scheduledFor = monthEndDate.atTime(1, 0);
 
         // Find all SCHEDULED runs for this month-end
@@ -217,7 +217,7 @@ public class MonthEndScheduler {
     public void executeT0Finalization() {
         log.info("Starting T finalization job for month-end recommendations");
 
-        LocalDate monthEndDate = getNextMonthEndDate();
+        LocalDate monthEndDate = getCurrentMonthEndDate();
         LocalDateTime scheduledFor = monthEndDate.atTime(1, 0);
 
         // Find all STAGED runs for this month-end
@@ -271,12 +271,12 @@ public class MonthEndScheduler {
     }
 
     /**
-     * Get next month-end date.
+     * Get current month-end date.
      *
-     * @return Last day of next month
+     * @return Last day of current month
      */
-    private LocalDate getNextMonthEndDate() {
-        return LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
+    private LocalDate getCurrentMonthEndDate() {
+        return LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
     }
 
     /**
@@ -294,19 +294,19 @@ public class MonthEndScheduler {
      * Perform data freshness check per FR-025.
      * Data is considered fresh if updated within last 48 hours.
      *
+     * TODO: This is a PLACEHOLDER implementation that always returns true.
+     * Production deployment requires implementation of actual checks for:
+     * - Market data (prices, volumes) - must be < 48 hours old
+     * - Factor scores - must be < 48 hours old
+     * - Universe constituents - must be current
+     * - Constraint parameters - must be current
+     *
      * @param run Recommendation run to check
-     * @return True if data is fresh
+     * @return True if data is fresh (CURRENTLY ALWAYS RETURNS TRUE)
      */
     private boolean performDataFreshnessCheck(RecommendationRun run) {
-        // TODO: Implement actual data freshness checks for:
-        // - Market data (prices, volumes)
-        // - Factor scores
-        // - Universe constituents
-        // - Constraint parameters
-
-        // Placeholder: Return true for now
         log.debug("Performing data freshness check for run {}", run.getId());
-        return true;
+        return true;  // Placeholder - always returns true
     }
 
     /**

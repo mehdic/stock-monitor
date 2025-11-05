@@ -1,5 +1,6 @@
 package com.stockmonitor.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockmonitor.model.Universe;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,8 +23,13 @@ public class UniverseDTO {
   private String type;
   private String benchmarkSymbol;
   private Integer constituentCount;
+
+  @JsonProperty("marketCapMin")
   private BigDecimal minMarketCap;
+
+  @JsonProperty("marketCapMax")
   private BigDecimal maxMarketCap;
+
   private String liquidityTierThreshold;
   private Boolean isActive;
   private Integer version;

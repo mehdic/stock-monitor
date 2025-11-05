@@ -1,6 +1,9 @@
 package com.stockmonitor.dto;
 
 import com.stockmonitor.model.ConstraintSet;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -18,10 +21,25 @@ public class ConstraintSetDTO {
   private UUID userId;
   private String name;
   private Boolean isActive;
+
+  @DecimalMin(value = "0.0", message = "Max name weight for large cap must be at least 0%")
+  @DecimalMax(value = "100.0", message = "Max name weight for large cap cannot exceed 100%")
   private BigDecimal maxNameWeightLargeCapPct;
+
+  @DecimalMin(value = "0.0", message = "Max name weight for mid cap must be at least 0%")
+  @DecimalMax(value = "100.0", message = "Max name weight for mid cap cannot exceed 100%")
   private BigDecimal maxNameWeightMidCapPct;
+
+  @DecimalMin(value = "0.0", message = "Max name weight for small cap must be at least 0%")
+  @DecimalMax(value = "100.0", message = "Max name weight for small cap cannot exceed 100%")
   private BigDecimal maxNameWeightSmallCapPct;
+
+  @DecimalMin(value = "0.0", message = "Max sector exposure must be at least 0%")
+  @DecimalMax(value = "100.0", message = "Max sector exposure cannot exceed 100%")
   private BigDecimal maxSectorExposurePct;
+
+  @DecimalMin(value = "0.0", message = "Turnover cap must be at least 0%")
+  @DecimalMax(value = "100.0", message = "Turnover cap cannot exceed 100%")
   private BigDecimal turnoverCapPct;
   private Integer weightDeadbandBps;
   private BigDecimal participationCapTier1Pct;

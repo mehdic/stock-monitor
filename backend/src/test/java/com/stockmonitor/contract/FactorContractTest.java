@@ -5,7 +5,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.stockmonitor.model.Holding;
+import com.stockmonitor.model.Portfolio;
+import com.stockmonitor.model.User;
+import com.stockmonitor.repository.HoldingRepository;
+import com.stockmonitor.repository.PortfolioRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,6 +30,69 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 public class FactorContractTest extends BaseIntegrationTest {
 
+  @Autowired
+  private PortfolioRepository portfolioRepository;
+
+  @Autowired
+  private HoldingRepository holdingRepository;
+
+  private UUID testPortfolioId;
+  private UUID testHoldingId;
+
+  @BeforeEach
+  void setupTestData() {
+    // Create test portfolio
+    testPortfolioId = UUID.randomUUID();
+    Portfolio portfolio = Portfolio.builder()
+        .id(testPortfolioId)
+        .userId(UUID.randomUUID())
+        .name("Test Portfolio")
+        .description("Portfolio for factor testing")
+        .baseCurrency("USD")
+        .totalMarketValue(BigDecimal.valueOf(1_000_000))
+        .build();
+    portfolioRepository.save(portfolio);
+
+    // Create test holdings with sectors for factor calculation
+    testHoldingId = UUID.randomUUID();
+    Holding holding1 = Holding.builder()
+        .id(testHoldingId)
+        .portfolioId(testPortfolioId)
+        .symbol("AAPL")
+        .sector("Technology")
+        .marketCapTier("LARGE_CAP")
+        .quantity(BigDecimal.valueOf(100))
+        .costBasis(BigDecimal.valueOf(15000))
+        .costBasisPerShare(BigDecimal.valueOf(150))
+        .acquisitionDate(LocalDate.now().minusMonths(6))
+        .currency("USD")
+        .currentPrice(BigDecimal.valueOf(180))
+        .currentMarketValue(BigDecimal.valueOf(18000))
+        .unrealizedPnl(BigDecimal.valueOf(3000))
+        .unrealizedPnlPct(BigDecimal.valueOf(20.00))
+        .weightPct(BigDecimal.valueOf(50.00))
+        .build();
+
+    Holding holding2 = Holding.builder()
+        .portfolioId(testPortfolioId)
+        .symbol("MSFT")
+        .sector("Technology")
+        .marketCapTier("LARGE_CAP")
+        .quantity(BigDecimal.valueOf(50))
+        .costBasis(BigDecimal.valueOf(15000))
+        .costBasisPerShare(BigDecimal.valueOf(300))
+        .acquisitionDate(LocalDate.now().minusMonths(3))
+        .currency("USD")
+        .currentPrice(BigDecimal.valueOf(350))
+        .currentMarketValue(BigDecimal.valueOf(17500))
+        .unrealizedPnl(BigDecimal.valueOf(2500))
+        .unrealizedPnlPct(BigDecimal.valueOf(16.67))
+        .weightPct(BigDecimal.valueOf(50.00))
+        .build();
+
+    holdingRepository.saveAll(Arrays.asList(holding1, holding2));
+  }
+
 
   /**
    * Test GET /api/portfolios/{id}/factors returns factor scores for all holdings.
@@ -32,10 +104,8 @@ public class FactorContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testGetPortfolioFactors() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
-
     mockMvc
-        .perform(get("/api/portfolios/{id}/factors", portfolioId))
+        .perform(get("/api/portfolios/{id}/factors", testPortfolioId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$[0].symbol").exists())
@@ -57,10 +127,8 @@ public class FactorContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testGetHoldingFactors() throws Exception {
-    UUID holdingId = UUID.randomUUID();
-
     mockMvc
-        .perform(get("/api/holdings/{id}/factors", holdingId))
+        .perform(get("/api/holdings/{id}/factors", testHoldingId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.symbol").exists())
         .andExpect(jsonPath("$.factorScores").exists())
@@ -79,10 +147,8 @@ public class FactorContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "VIEWER")
   public void testViewerCanAccessFactors() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
-
     mockMvc
-        .perform(get("/api/portfolios/{id}/factors", portfolioId))
+        .perform(get("/api/portfolios/{id}/factors", testPortfolioId))
         .andExpect(status().isOk());
   }
 
@@ -94,10 +160,8 @@ public class FactorContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testFactorScoresAreSectorNormalized() throws Exception {
-    UUID portfolioId = UUID.randomUUID();
-
     mockMvc
-        .perform(get("/api/portfolios/{id}/factors", portfolioId))
+        .perform(get("/api/portfolios/{id}/factors", testPortfolioId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].factorScores.value").isNumber())
         .andExpect(jsonPath("$[0].sector").exists()); // Sector required for normalization

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="1.0.4-1" author="stockmonitor">
+    <comment>Add portfolio_id column to recommendation_run table for FR-028 run type isolation</comment>
+
+    <!-- Add portfolio_id column (nullable initially to allow backfill) -->
+    <addColumn tableName="recommendation_run">
+      <column name="portfolio_id" type="uuid">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+
+    <!-- Backfill portfolio_id from existing data -->
+    <!-- Note: For test data, we'll set a default UUID. Production should have proper migration logic. -->
+    <sql>
+      UPDATE recommendation_run
+      SET portfolio_id = (
+        SELECT p.id
+        FROM portfolio p
+        WHERE p.user_id = recommendation_run.user_id
+        ORDER BY p.created_at ASC
+        LIMIT 1
+      )
+      WHERE portfolio_id IS NULL;
+    </sql>
+
+    <!-- Make portfolio_id NOT NULL after backfill -->
+    <addNotNullConstraint
+        tableName="recommendation_run"
+        columnName="portfolio_id"
+        columnDataType="uuid"/>
+
+    <!-- Add foreign key constraint -->
+    <addForeignKeyConstraint
+        baseTableName="recommendation_run"
+        baseColumnNames="portfolio_id"
+        constraintName="fk_run_portfolio"
+        referencedTableName="portfolio"
+        referencedColumnNames="id"/>
+
+    <!-- Add index for performance -->
+    <createIndex indexName="idx_run_portfolio_runtype" tableName="recommendation_run">
+      <column name="portfolio_id"/>
+      <column name="run_type"/>
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

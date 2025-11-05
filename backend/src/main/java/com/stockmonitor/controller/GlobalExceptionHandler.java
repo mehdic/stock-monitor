@@ -91,13 +91,20 @@ public class GlobalExceptionHandler {
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public ResponseEntity<ErrorResponse> handleAccessDenied(
       AccessDeniedException ex, WebRequest request) {
+    String path = request.getDescription(false).replace("uri=", "");
+
+    // Provide specific message for constraint modification
+    String message = path.contains("/constraints") && !path.contains("/preview")
+        ? "Only portfolio owner can modify constraints"
+        : "You do not have permission to access this resource";
+
     ErrorResponse errorResponse =
         ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.FORBIDDEN.value())
             .error("Access Denied")
-            .message("You do not have permission to access this resource")
-            .path(request.getDescription(false).replace("uri=", ""))
+            .message(message)
+            .path(path)
             .build();
 
     log.warn("Access denied: {}", ex.getMessage());

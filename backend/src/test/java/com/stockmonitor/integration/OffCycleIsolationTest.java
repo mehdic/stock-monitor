@@ -223,6 +223,6 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
 
         assertThat(manualRunResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         // Manual runs should default to OFF_CYCLE to avoid overwriting scheduled results
-        assertThat(manualRunResponse.getBody().getRunType()).isIn("OFF_CYCLE", null);
+        assertThat(manualRunResponse.getBody().getRunType()).isEqualTo("OFF_CYCLE");
     }
 }

@@ -5,6 +5,7 @@ import com.stockmonitor.dto.ConstraintSetDTO;
 import com.stockmonitor.model.ConstraintSet;
 import com.stockmonitor.service.ConstraintPreviewService;
 import com.stockmonitor.service.ConstraintService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +74,7 @@ public class ConstraintController {
   @PutMapping("/api/portfolios/{portfolioId}/constraints")
   @PreAuthorize("hasRole('OWNER')")
   public ResponseEntity<ConstraintSetDTO> updateConstraints(
-      @PathVariable UUID portfolioId, @RequestBody ConstraintSetDTO dto) {
+      @PathVariable UUID portfolioId, @Valid @RequestBody ConstraintSetDTO dto) {
     log.info("Update constraints for portfolio: {}", portfolioId);
 
     ConstraintSet updated = constraintService.updateConstraints(portfolioId, dto);

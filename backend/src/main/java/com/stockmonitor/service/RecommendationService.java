@@ -83,6 +83,7 @@ public class RecommendationService {
     RecommendationRun run =
         RecommendationRun.builder()
             .userId(portfolio.getUserId())
+            .portfolioId(portfolioId)
             .universeId(universeId)
             .constraintSetId(constraints.getId())
             .runType(runType)
@@ -191,6 +192,48 @@ public class RecommendationService {
   public List<RecommendationRunDTO> getRecommendationRunsForUser(UUID userId) {
     log.info("Fetching recommendation runs for user {}", userId);
     return recommendationRunRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        .map(RecommendationRunDTO::from)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Get current (most recent SCHEDULED) recommendations for a portfolio.
+   * Used per FR-028 to isolate off-cycle runs from official recommendations.
+   *
+   * @param portfolioId Portfolio ID
+   * @return List of recommendations from most recent SCHEDULED run
+   */
+  @Transactional(readOnly = true)
+  public List<RecommendationDTO> getCurrentRecommendationsForPortfolio(UUID portfolioId) {
+    log.info("Fetching current recommendations for portfolio {}", portfolioId);
+
+    // Find most recent SCHEDULED run for portfolio
+    List<RecommendationRun> scheduledRuns =
+        recommendationRunRepository.findByPortfolioIdAndRunTypeOrderByCreatedAtDesc(
+            portfolioId, "SCHEDULED");
+
+    if (scheduledRuns.isEmpty()) {
+      log.info("No SCHEDULED runs found for portfolio {}", portfolioId);
+      return List.of();
+    }
+
+    RecommendationRun latestScheduled = scheduledRuns.get(0);
+    log.info("Returning recommendations from SCHEDULED run {}", latestScheduled.getId());
+    return getRecommendationsForRun(latestScheduled.getId());
+  }
+
+  /**
+   * Get recommendation runs filtered by run type.
+   *
+   * @param userId User ID
+   * @param runType SCHEDULED or OFF_CYCLE
+   * @return List of runs matching the type
+   */
+  @Transactional(readOnly = true)
+  public List<RecommendationRunDTO> getRunsByTypeForUser(UUID userId, String runType) {
+    log.info("Fetching {} runs for user {}", runType, userId);
+    return recommendationRunRepository.findByUserIdAndRunTypeOrderByCreatedAtDesc(userId, runType)
+        .stream()
         .map(RecommendationRunDTO::from)
         .collect(Collectors.toList());
   }

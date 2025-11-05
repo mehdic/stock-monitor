@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.stockmonitor.BaseIntegrationTest;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -21,12 +22,40 @@ class PortfolioContractTest extends BaseIntegrationTest {
 
   private String authToken;
   private String portfolioId;
+  private UUID testPortfolioUuid;
+  private UUID testUserId;
 
   @BeforeEach
   void setUpAuth() throws Exception {
     // Generate a valid JWT token for testing
     authToken = generateTestToken("testuser@example.com");
     portfolioId = "00000000-0000-0000-0000-000000000001";
+    testPortfolioUuid = UUID.fromString(portfolioId);
+
+    // Create test data for performance tests
+    seedPerformanceTestData();
+  }
+
+  private void seedPerformanceTestData() {
+    // Create test portfolio with holdings for performance calculation
+    testUserId = testDataHelper.createTestUser("testuser@example.com").getId();
+    testDataHelper.createTestPortfolio(testPortfolioUuid, testUserId);
+
+    // Create holdings with cost basis and current values for P&L calculation
+    testDataHelper.createTestHolding(testPortfolioUuid, "AAPL",
+        java.math.BigDecimal.valueOf(100), // quantity
+        java.math.BigDecimal.valueOf(150.00), // cost basis
+        "Technology");
+
+    testDataHelper.createTestHolding(testPortfolioUuid, "MSFT",
+        java.math.BigDecimal.valueOf(50),
+        java.math.BigDecimal.valueOf(300.00),
+        "Technology");
+
+    testDataHelper.createTestHolding(testPortfolioUuid, "GOOGL",
+        java.math.BigDecimal.valueOf(25),
+        java.math.BigDecimal.valueOf(2500.00),
+        "Technology");
   }
 
   @Test
