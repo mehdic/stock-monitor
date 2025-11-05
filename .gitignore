@@ -36,7 +36,7 @@ bin/
 
 ### Backend (Java/Maven) ###
 backend/target/
-backend/.mvn/
+# backend/.mvn/ - Commented out to allow caching dependencies in .mvn/repository/
 backend/mvnw
 backend/mvnw.cmd
 backend/out/
