@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  *
  * <p>Tests full backtest workflow from request to results.
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BacktestExecutionTest extends BaseIntegrationTest {
 
   @Test

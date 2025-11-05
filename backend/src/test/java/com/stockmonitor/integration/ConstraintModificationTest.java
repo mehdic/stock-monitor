@@ -48,9 +48,9 @@ public class ConstraintModificationTest extends BaseIntegrationTest {
 
   @BeforeEach
   public void setup() {
-    // Create test user
+    // Create test user with unique email to avoid conflicts
     testUser = new User();
-    testUser.setEmail("constraint-test@example.com");
+    testUser.setEmail("constraint-test-" + UUID.randomUUID() + "@example.com");
     testUser.setPasswordHash("hashed");
     testUser.setRole(User.UserRole.OWNER);
     testUser.setEnabled(true);
@@ -65,12 +65,14 @@ public class ConstraintModificationTest extends BaseIntegrationTest {
     testPortfolio = portfolioRepository.save(testPortfolio);
 
     // Create default constraint set matching system defaults
-    defaultConstraints = new ConstraintSet();
-    defaultConstraints.setUserId(testUser.getId());
-    defaultConstraints.setName("Default");
-    defaultConstraints.setMaxSectorExposurePct(BigDecimal.valueOf(20.0)); // System default is 20.0
-    defaultConstraints.setTurnoverCapPct(BigDecimal.valueOf(25.0)); // System default is 25.0
-    defaultConstraints.setVersion(1);
+    // Use builder to get all default values from @Builder.Default annotations
+    defaultConstraints = ConstraintSet.builder()
+            .userId(testUser.getId())
+            .name("Default")
+            .maxSectorExposurePct(BigDecimal.valueOf(20.0)) // System default is 20.0
+            .turnoverCapPct(BigDecimal.valueOf(25.0)) // System default is 25.0
+            .version(1)
+            .build();
     defaultConstraints = constraintSetRepository.save(defaultConstraints);
 
     testPortfolio.setActiveConstraintSetId(defaultConstraints.getId());

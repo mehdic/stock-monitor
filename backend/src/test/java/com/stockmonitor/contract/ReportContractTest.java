@@ -37,9 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ReportContractTest extends BaseIntegrationTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
     private RecommendationRunRepository runRepository;
 
     private UUID testRunId;
@@ -72,8 +69,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReportForCompletedRun_ReturnsReport() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -93,8 +90,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsSummarySection() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -117,8 +114,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsTopPicks() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -138,8 +135,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsExclusions() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -158,8 +155,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsDisclaimers() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -180,8 +177,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsFactorScores() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -203,8 +200,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsConstraintCompliance() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
@@ -227,8 +224,8 @@ public class ReportContractTest extends BaseIntegrationTest {
         UUID nonExistentRunId = UUID.randomUUID();
 
         // Act
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 String.class,
@@ -257,8 +254,8 @@ public class ReportContractTest extends BaseIntegrationTest {
         runningRun = runRepository.save(runningRun);
 
         // Act
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 String.class,
@@ -272,8 +269,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testDownloadReportPDF_ReturnsApplicationPdf() {
         // Act
-        ResponseEntity<byte[]> response = restTemplate.exchange(
-                "/api/runs/{id}/report/pdf",
+        ResponseEntity<byte[]> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report/pdf"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 byte[].class,
@@ -295,8 +292,8 @@ public class ReportContractTest extends BaseIntegrationTest {
     @Test
     public void testGetReport_ContainsMetadata() {
         // Act
-        ResponseEntity<ReportDTO> response = restTemplate.exchange(
-                "/api/runs/{id}/report",
+        ResponseEntity<ReportDTO> response = testRestTemplate.exchange(
+                url("/api/runs/{id}/report"),
                 HttpMethod.GET,
                 createAuthEntity("test@example.com"),
                 ReportDTO.class,
