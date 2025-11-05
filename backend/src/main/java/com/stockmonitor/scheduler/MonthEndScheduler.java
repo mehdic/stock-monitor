@@ -84,9 +84,21 @@ public class MonthEndScheduler {
 
         // Create scheduled runs for all active portfolios
         List<Portfolio> portfolios = portfolioRepository.findAll();
+        log.info("Found {} portfolios for month-end {}", portfolios.size(), monthEndDate);
         int createdCount = 0;
 
         for (Portfolio portfolio : portfolios) {
+            // Skip portfolios without active universe or constraint set
+            if (portfolio.getActiveUniverseId() == null || portfolio.getActiveConstraintSetId() == null) {
+                log.info("Skipping portfolio {} - no active universe ({}==null? {}) or constraint set ({}==null? {})",
+                        portfolio.getId(),
+                        portfolio.getActiveUniverseId(),
+                        portfolio.getActiveUniverseId() == null,
+                        portfolio.getActiveConstraintSetId(),
+                        portfolio.getActiveConstraintSetId() == null);
+                continue;
+            }
+
             try {
                 RecommendationRun run = RecommendationRun.builder()
                         .userId(portfolio.getUserId())
@@ -102,12 +114,14 @@ public class MonthEndScheduler {
                 run = runRepository.save(run);
                 createdCount++;
 
+                log.info("Created scheduled run {} for portfolio {} (user: {})", run.getId(), portfolio.getId(), portfolio.getUserId());
+
                 // Send T-3 notification to user
                 notificationService.sendT3PreComputeNotification(portfolio.getUserId(), run.getId());
 
-                log.debug("Created scheduled run {} for portfolio {}", run.getId(), portfolio.getId());
+                log.info("Sent T-3 notification for run {}", run.getId());
             } catch (Exception e) {
-                log.error("Failed to create scheduled run for portfolio {}: {}", portfolio.getId(), e.getMessage());
+                log.error("Failed to create scheduled run for portfolio {}: {}", portfolio.getId(), e.getMessage(), e);
             }
         }
 
@@ -203,7 +217,7 @@ public class MonthEndScheduler {
     public void executeT0Finalization() {
         log.info("Starting T finalization job for month-end recommendations");
 
-        LocalDate monthEndDate = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+        LocalDate monthEndDate = getNextMonthEndDate();
         LocalDateTime scheduledFor = monthEndDate.atTime(1, 0);
 
         // Find all STAGED runs for this month-end
@@ -259,10 +273,10 @@ public class MonthEndScheduler {
     /**
      * Get next month-end date.
      *
-     * @return Last day of current month
+     * @return Last day of next month
      */
     private LocalDate getNextMonthEndDate() {
-        return LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+        return LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1);
     }
 
     /**

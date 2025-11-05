@@ -43,6 +43,7 @@ Your job is to **coordinate**, not implement. You must:
 - Edit files yourself
 - Run tests yourself
 - Review code yourself
+- Stop work until BAZINGA
 
 **If there's an issue, spawn the appropriate agent to handle it!**
 
@@ -103,7 +104,7 @@ Extract from user's `/orchestrate` command:
 ### Step 2: Spawn Developer Agent
 
 Use Task tool:
-
+could
 ```
 Task(
   subagent_type: "general-purpose"
