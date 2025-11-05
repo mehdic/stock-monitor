@@ -27,9 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class OffCycleIsolationTest extends BaseIntegrationTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
     private RecommendationRunRepository recommendationRunRepository;
 
     private String jwtToken;
@@ -50,15 +47,15 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
                 .lastName("Test")
                 .build();
 
-        restTemplate.postForEntity("/api/auth/register", registerRequest, UserDTO.class);
+        testRestTemplate.postForEntity(url("/api/auth/register"), registerRequest, UserDTO.class);
 
         LoginRequest loginRequest = LoginRequest.builder()
                 .email(testEmail)
                 .password(testPassword)
                 .build();
 
-        ResponseEntity<LoginResponse> loginResponse = restTemplate.postForEntity(
-                "/api/auth/login",
+        ResponseEntity<LoginResponse> loginResponse = testRestTemplate.postForEntity(
+                url("/api/auth/login"),
                 loginRequest,
                 LoginResponse.class
         );
@@ -73,8 +70,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         PortfolioDTO createPortfolioRequest = PortfolioDTO.builder()
                 .build();
 
-        ResponseEntity<PortfolioDTO> portfolioResponse = restTemplate.exchange(
-                "/api/portfolios",
+        ResponseEntity<PortfolioDTO> portfolioResponse = testRestTemplate.exchange(
+                url("/api/portfolios"),
                 HttpMethod.POST,
                 new HttpEntity<>(createPortfolioRequest, headers),
                 PortfolioDTO.class
@@ -83,8 +80,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         portfolioId = portfolioResponse.getBody().getId();
 
         // Get universe
-        ResponseEntity<UniverseDTO[]> universesResponse = restTemplate.exchange(
-                "/api/universes",
+        ResponseEntity<UniverseDTO[]> universesResponse = testRestTemplate.exchange(
+                url("/api/universes"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 UniverseDTO[].class
@@ -102,13 +99,13 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
     @Test
     public void testOffCycleRunIsolation() {
         // Step 1: Create scheduled run
-        String scheduledRunUrl = String.format(
+        String scheduledRunUrl = url(String.format(
                 "/api/runs?portfolioId=%s&universeId=%s&run_type=SCHEDULED",
                 portfolioId,
                 universeId
-        );
+        ));
 
-        ResponseEntity<RecommendationRunDTO> scheduledRunResponse = restTemplate.exchange(
+        ResponseEntity<RecommendationRunDTO> scheduledRunResponse = testRestTemplate.exchange(
                 scheduledRunUrl,
                 HttpMethod.POST,
                 new HttpEntity<>(headers),
@@ -126,13 +123,13 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         String scheduledRunStatus = scheduledRun.getStatus();
 
         // Step 2: Trigger off-cycle run
-        String offCycleRunUrl = String.format(
+        String offCycleRunUrl = url(String.format(
                 "/api/runs?portfolioId=%s&universeId=%s&run_type=OFF_CYCLE",
                 portfolioId,
                 universeId
-        );
+        ));
 
-        ResponseEntity<RecommendationRunDTO> offCycleRunResponse = restTemplate.exchange(
+        ResponseEntity<RecommendationRunDTO> offCycleRunResponse = testRestTemplate.exchange(
                 offCycleRunUrl,
                 HttpMethod.POST,
                 new HttpEntity<>(headers),
@@ -152,8 +149,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         assertThat(scheduledRunAfter.getRunType()).isEqualTo("SCHEDULED");
 
         // Step 4: Verify GET /api/portfolios/{id}/recommendations returns scheduled run only
-        ResponseEntity<RecommendationDTO[]> currentRecommendations = restTemplate.exchange(
-                "/api/portfolios/" + portfolioId + "/recommendations",
+        ResponseEntity<RecommendationDTO[]> currentRecommendations = testRestTemplate.exchange(
+                url("/api/portfolios/" + portfolioId + "/recommendations"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationDTO[].class
@@ -166,8 +163,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         }
 
         // Step 5: Verify GET /api/runs filters by run_type correctly
-        ResponseEntity<RecommendationRunDTO[]> scheduledRuns = restTemplate.exchange(
-                "/api/runs?run_type=SCHEDULED",
+        ResponseEntity<RecommendationRunDTO[]> scheduledRuns = testRestTemplate.exchange(
+                url("/api/runs?run_type=SCHEDULED"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationRunDTO[].class
@@ -179,8 +176,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
             assertThat(run.getRunType()).isEqualTo("SCHEDULED");
         }
 
-        ResponseEntity<RecommendationRunDTO[]> offCycleRuns = restTemplate.exchange(
-                "/api/runs?run_type=OFF_CYCLE",
+        ResponseEntity<RecommendationRunDTO[]> offCycleRuns = testRestTemplate.exchange(
+                url("/api/runs?run_type=OFF_CYCLE"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationRunDTO[].class
@@ -193,8 +190,8 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         }
 
         // Step 6: Verify off-cycle run accessible via specific endpoint
-        ResponseEntity<RecommendationDTO[]> offCycleRecommendations = restTemplate.exchange(
-                "/api/runs/" + offCycleRunId + "/recommendations",
+        ResponseEntity<RecommendationDTO[]> offCycleRecommendations = testRestTemplate.exchange(
+                url("/api/runs/" + offCycleRunId + "/recommendations"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationDTO[].class
@@ -208,13 +205,13 @@ public class OffCycleIsolationTest extends BaseIntegrationTest {
         // This test would require SERVICE role authentication
         // For now, verify that manual runs (no run_type parameter) default to OFF_CYCLE
 
-        String manualRunUrl = String.format(
+        String manualRunUrl = url(String.format(
                 "/api/runs?portfolioId=%s&universeId=%s",
                 portfolioId,
                 universeId
-        );
+        ));
 
-        ResponseEntity<RecommendationRunDTO> manualRunResponse = restTemplate.exchange(
+        ResponseEntity<RecommendationRunDTO> manualRunResponse = testRestTemplate.exchange(
                 manualRunUrl,
                 HttpMethod.POST,
                 new HttpEntity<>(headers),

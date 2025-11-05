@@ -30,9 +30,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class OnboardingFlowTest extends BaseIntegrationTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -63,8 +60,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .lastName("User")
                 .build();
 
-        ResponseEntity<UserDTO> registerResponse = restTemplate.postForEntity(
-                "/api/auth/register",
+        ResponseEntity<UserDTO> registerResponse = testRestTemplate.postForEntity(
+                url("/api/auth/register"),
                 registerRequest,
                 UserDTO.class
         );
@@ -85,8 +82,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .password(testPassword)
                 .build();
 
-        ResponseEntity<LoginResponse> loginResponse = restTemplate.postForEntity(
-                "/api/auth/login",
+        ResponseEntity<LoginResponse> loginResponse = testRestTemplate.postForEntity(
+                url("/api/auth/login"),
                 loginRequest,
                 LoginResponse.class
         );
@@ -109,8 +106,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
 
         HttpEntity<PortfolioDTO> portfolioRequest = new HttpEntity<>(createPortfolioRequest, headers);
 
-        ResponseEntity<PortfolioDTO> portfolioResponse = restTemplate.exchange(
-                "/api/portfolios",
+        ResponseEntity<PortfolioDTO> portfolioResponse = testRestTemplate.exchange(
+                url("/api/portfolios"),
                 HttpMethod.POST,
                 portfolioRequest,
                 PortfolioDTO.class
@@ -128,8 +125,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         // Step 5: Get Available Universes
         HttpEntity<Void> universeRequest = new HttpEntity<>(headers);
 
-        ResponseEntity<UniverseDTO[]> universesResponse = restTemplate.exchange(
-                "/api/universes",
+        ResponseEntity<UniverseDTO[]> universesResponse = testRestTemplate.exchange(
+                url("/api/universes"),
                 HttpMethod.GET,
                 universeRequest,
                 UniverseDTO[].class
@@ -142,8 +139,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         UUID universeId = universesResponse.getBody()[0].getId();
 
         // Step 6: Get Active Constraints
-        ResponseEntity<ConstraintSetDTO> constraintsResponse = restTemplate.exchange(
-                "/api/portfolios/" + portfolioId + "/constraints",
+        ResponseEntity<ConstraintSetDTO> constraintsResponse = testRestTemplate.exchange(
+                url("/api/portfolios/" + portfolioId + "/constraints"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 ConstraintSetDTO.class
@@ -152,9 +149,9 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         assertThat(constraintsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // Step 7: Trigger Recommendation Run
-        String runUrl = String.format("/api/runs?portfolioId=%s&universeId=%s", portfolioId, universeId);
+        String runUrl = url(String.format("/api/runs?portfolioId=%s&universeId=%s", portfolioId, universeId));
 
-        ResponseEntity<RecommendationRunDTO> runResponse = restTemplate.exchange(
+        ResponseEntity<RecommendationRunDTO> runResponse = testRestTemplate.exchange(
                 runUrl,
                 HttpMethod.POST,
                 new HttpEntity<>(headers),
@@ -168,8 +165,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         assertThat(runResponse.getBody().getStatus()).isIn("RUNNING", "COMPLETED");
 
         // Step 8: Get Run Details
-        ResponseEntity<RecommendationRunDTO> runDetailsResponse = restTemplate.exchange(
-                "/api/runs/" + runId,
+        ResponseEntity<RecommendationRunDTO> runDetailsResponse = testRestTemplate.exchange(
+                url("/api/runs/" + runId),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationRunDTO.class
@@ -179,8 +176,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         assertThat(runDetailsResponse.getBody()).isNotNull();
 
         // Step 9: Get Recommendations (if run completed)
-        ResponseEntity<RecommendationDTO[]> recommendationsResponse = restTemplate.exchange(
-                "/api/runs/" + runId + "/recommendations",
+        ResponseEntity<RecommendationDTO[]> recommendationsResponse = testRestTemplate.exchange(
+                url("/api/runs/" + runId + "/recommendations"),
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 RecommendationDTO[].class
@@ -199,8 +196,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .lastName("User")
                 .build();
 
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                "/api/auth/register",
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                url("/api/auth/register"),
                 registerRequest,
                 String.class
         );
@@ -218,7 +215,7 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .lastName("User")
                 .build();
 
-        restTemplate.postForEntity("/api/auth/register", registerRequest, UserDTO.class);
+        testRestTemplate.postForEntity("/api/auth/register", registerRequest, UserDTO.class);
 
         // Then try to login with wrong password
         LoginRequest loginRequest = LoginRequest.builder()
@@ -226,8 +223,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .password("WrongPassword123!")
                 .build();
 
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                "/api/auth/login",
+        ResponseEntity<String> response = testRestTemplate.postForEntity(
+                url("/api/auth/login"),
                 loginRequest,
                 String.class
         );
@@ -238,8 +235,8 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
     @Test
     public void testUnauthorizedAccessToProtectedEndpoints() {
         // Try to access portfolios without authentication
-        ResponseEntity<String> response = restTemplate.getForEntity(
-                "/api/portfolios",
+        ResponseEntity<String> response = testRestTemplate.getForEntity(
+                url("/api/portfolios"),
                 String.class
         );
 

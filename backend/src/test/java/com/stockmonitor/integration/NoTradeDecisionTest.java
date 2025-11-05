@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 /**
  * Integration test for "No trade" decision logic (T191, FR-026, FR-069).
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class NoTradeDecisionTest extends BaseIntegrationTest {
 
   @Test

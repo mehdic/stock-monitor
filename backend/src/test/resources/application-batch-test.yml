@@ -34,12 +34,16 @@ spring:
 
   batch:
     job:
-      enabled: true
+      enabled: false  # Don't auto-run jobs on startup in tests
     jdbc:
       initialize-schema: always
 
   websocket:
     enabled: false
+
+  # Allow bean overriding for test mocks
+  main:
+    allow-bean-definition-overriding: true
 
 logging:
   level:

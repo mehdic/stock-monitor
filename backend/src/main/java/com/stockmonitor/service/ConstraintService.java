@@ -128,26 +128,27 @@ public class ConstraintService {
     constraintSetRepository.save(currentConstraints);
 
     // Create new constraint set with incremented version
+    // Use current constraints as base, then override with DTO values if provided
     ConstraintSet newConstraints =
         ConstraintSet.builder()
             .userId(portfolio.getUserId())
             .name(dto.getName() != null ? dto.getName() : "Custom v" + nextVersion)
             .isActive(true)
-            .maxNameWeightLargeCapPct(dto.getMaxNameWeightLargeCapPct())
-            .maxNameWeightMidCapPct(dto.getMaxNameWeightMidCapPct())
-            .maxNameWeightSmallCapPct(dto.getMaxNameWeightSmallCapPct())
-            .maxSectorExposurePct(dto.getMaxSectorExposurePct())
-            .turnoverCapPct(dto.getTurnoverCapPct())
-            .weightDeadbandBps(dto.getWeightDeadbandBps())
-            .participationCapTier1Pct(dto.getParticipationCapTier1Pct())
-            .participationCapTier2Pct(dto.getParticipationCapTier2Pct())
-            .participationCapTier3Pct(dto.getParticipationCapTier3Pct())
-            .participationCapTier4Pct(dto.getParticipationCapTier4Pct())
-            .participationCapTier5Pct(dto.getParticipationCapTier5Pct())
-            .liquidityFloorAdvUsd(dto.getLiquidityFloorAdvUsd())
-            .spreadThresholdBps(dto.getSpreadThresholdBps())
-            .earningsBlackoutHours(dto.getEarningsBlackoutHours())
-            .costMarginRequiredBps(dto.getCostMarginRequiredBps())
+            .maxNameWeightLargeCapPct(dto.getMaxNameWeightLargeCapPct() != null ? dto.getMaxNameWeightLargeCapPct() : currentConstraints.getMaxNameWeightLargeCapPct())
+            .maxNameWeightMidCapPct(dto.getMaxNameWeightMidCapPct() != null ? dto.getMaxNameWeightMidCapPct() : currentConstraints.getMaxNameWeightMidCapPct())
+            .maxNameWeightSmallCapPct(dto.getMaxNameWeightSmallCapPct() != null ? dto.getMaxNameWeightSmallCapPct() : currentConstraints.getMaxNameWeightSmallCapPct())
+            .maxSectorExposurePct(dto.getMaxSectorExposurePct() != null ? dto.getMaxSectorExposurePct() : currentConstraints.getMaxSectorExposurePct())
+            .turnoverCapPct(dto.getTurnoverCapPct() != null ? dto.getTurnoverCapPct() : currentConstraints.getTurnoverCapPct())
+            .weightDeadbandBps(dto.getWeightDeadbandBps() != null ? dto.getWeightDeadbandBps() : currentConstraints.getWeightDeadbandBps())
+            .participationCapTier1Pct(dto.getParticipationCapTier1Pct() != null ? dto.getParticipationCapTier1Pct() : currentConstraints.getParticipationCapTier1Pct())
+            .participationCapTier2Pct(dto.getParticipationCapTier2Pct() != null ? dto.getParticipationCapTier2Pct() : currentConstraints.getParticipationCapTier2Pct())
+            .participationCapTier3Pct(dto.getParticipationCapTier3Pct() != null ? dto.getParticipationCapTier3Pct() : currentConstraints.getParticipationCapTier3Pct())
+            .participationCapTier4Pct(dto.getParticipationCapTier4Pct() != null ? dto.getParticipationCapTier4Pct() : currentConstraints.getParticipationCapTier4Pct())
+            .participationCapTier5Pct(dto.getParticipationCapTier5Pct() != null ? dto.getParticipationCapTier5Pct() : currentConstraints.getParticipationCapTier5Pct())
+            .liquidityFloorAdvUsd(dto.getLiquidityFloorAdvUsd() != null ? dto.getLiquidityFloorAdvUsd() : currentConstraints.getLiquidityFloorAdvUsd())
+            .spreadThresholdBps(dto.getSpreadThresholdBps() != null ? dto.getSpreadThresholdBps() : currentConstraints.getSpreadThresholdBps())
+            .earningsBlackoutHours(dto.getEarningsBlackoutHours() != null ? dto.getEarningsBlackoutHours() : currentConstraints.getEarningsBlackoutHours())
+            .costMarginRequiredBps(dto.getCostMarginRequiredBps() != null ? dto.getCostMarginRequiredBps() : currentConstraints.getCostMarginRequiredBps())
             .version(nextVersion)
             .build();
 
