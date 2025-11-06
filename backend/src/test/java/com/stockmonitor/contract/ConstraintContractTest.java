@@ -6,8 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.BaseIntegrationTest;
 import com.stockmonitor.dto.ConstraintSetDTO;
+import com.stockmonitor.repository.*;
 import java.math.BigDecimal;
 import java.util.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +27,22 @@ public class ConstraintContractTest extends BaseIntegrationTest {
 
   @Autowired private ObjectMapper objectMapper;
 
+  @Autowired private RecommendationRepository recommendationRepository;
+  @Autowired private RecommendationRunRepository recommendationRunRepository;
+  @Autowired private HoldingRepository holdingRepository;
+  @Autowired private PortfolioRepository portfolioRepository;
+  @Autowired private ConstraintSetRepository constraintSetRepository;
+
   private UUID testPortfolioId;
   private UUID testUserId;
 
   @org.junit.jupiter.api.BeforeEach
   void setUp() {
+    // Ensure test universes exist
+    testDataHelper.createTestUniverse("S&P 500");
+    testDataHelper.createTestUniverse("Russell 2000");
+    testDataHelper.createTestUniverse("Custom Test Universe");
+
     // Create test portfolio and user for constraint tests
     testUserId = testDataHelper.createTestUser("testuser@example.com").getId();
     testPortfolioId = UUID.randomUUID();
@@ -41,6 +54,17 @@ public class ConstraintContractTest extends BaseIntegrationTest {
 
     // Seed data for preview tests (RecommendationRun and Holdings)
     seedPreviewTestData();
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    // Delete in reverse dependency order (child → parent)
+    recommendationRepository.deleteAll();
+    recommendationRunRepository.deleteAll();
+    holdingRepository.deleteAll();
+    constraintSetRepository.deleteAll();
+    portfolioRepository.deleteAll();
+    userRepository.deleteAll();
   }
 
   private void seedPreviewTestData() {

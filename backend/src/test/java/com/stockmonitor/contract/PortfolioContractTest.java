@@ -52,6 +52,11 @@ class PortfolioContractTest extends BaseIntegrationTest {
   }
 
   private void seedPerformanceTestData() {
+    // Ensure test universes exist
+    testDataHelper.createTestUniverse("S&P 500");
+    testDataHelper.createTestUniverse("Russell 2000");
+    testDataHelper.createTestUniverse("Custom Test Universe");
+
     // Create test portfolio with holdings for performance calculation
     testUserId = testDataHelper.createTestUser("testuser@example.com").getId();
     testDataHelper.createTestPortfolio(testPortfolioUuid, testUserId);
