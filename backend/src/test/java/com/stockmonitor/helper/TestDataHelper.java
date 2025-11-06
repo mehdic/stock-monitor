@@ -500,15 +500,42 @@ public class TestDataHelper {
   }
 
   /**
-   * Save a universe in a new transaction, ensuring visibility to HTTP requests.
+   * Save a universe in a new transaction with a specific ID, ensuring visibility to HTTP requests.
    * Use this for test data that needs to be visible across transaction boundaries.
+   * Uses native SQL to bypass @GeneratedValue and set a specific UUID.
    *
-   * @param universe the universe to save
+   * @param universe the universe to save (with ID pre-set)
    * @return the saved universe
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Universe saveUniverseInNewTransaction(Universe universe) {
-    return universeRepository.save(universe);
+    // Use native SQL to insert with specific ID (bypass @GeneratedValue)
+    LocalDateTime now = LocalDateTime.now();
+
+    entityManager.createNativeQuery(
+        "INSERT INTO universe (id, name, description, type, benchmark_symbol, constituent_count, " +
+        "min_market_cap, max_market_cap, liquidity_tier_threshold, effective_date, is_active, version, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .setParameter(1, universe.getId())
+        .setParameter(2, universe.getName())
+        .setParameter(3, universe.getDescription())
+        .setParameter(4, universe.getType())
+        .setParameter(5, universe.getBenchmarkSymbol())
+        .setParameter(6, universe.getConstituentCount())
+        .setParameter(7, universe.getMinMarketCap())
+        .setParameter(8, universe.getMaxMarketCap())
+        .setParameter(9, universe.getLiquidityTierThreshold())
+        .setParameter(10, universe.getEffectiveDate())
+        .setParameter(11, universe.getIsActive())
+        .setParameter(12, universe.getVersion())
+        .setParameter(13, now)
+        .setParameter(14, now)
+        .executeUpdate();
+
+    entityManager.flush();
+    entityManager.clear();
+
+    return universeRepository.findById(universe.getId()).orElseThrow();
   }
 
   /**
@@ -519,7 +546,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public UniverseConstituent saveConstituentInNewTransaction(UniverseConstituent constituent) {
-    return universeConstituentRepository.save(constituent);
+    UniverseConstituent saved = universeConstituentRepository.save(constituent);
+    entityManager.flush();
+    entityManager.clear();
+    return saved;
   }
 
   /**
