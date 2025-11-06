@@ -4,8 +4,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.stockmonitor.BaseIntegrationTest;
+import com.stockmonitor.model.Portfolio;
 import com.stockmonitor.model.Universe;
 import com.stockmonitor.model.UniverseConstituent;
+import com.stockmonitor.repository.PortfolioRepository;
 import com.stockmonitor.repository.UniverseConstituentRepository;
 import com.stockmonitor.repository.UniverseRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -34,6 +36,9 @@ class UniverseContractTest extends BaseIntegrationTest {
 
   @Autowired
   private UniverseConstituentRepository universeConstituentRepository;
+
+  @Autowired
+  private PortfolioRepository portfolioRepository;
 
   @BeforeEach
   void setUpAuth() {
@@ -81,40 +86,47 @@ class UniverseContractTest extends BaseIntegrationTest {
           .version(1)
           .build();
 
-      universeRepository.saveAll(Arrays.asList(sp500, sp500MidCap, russell2000));
+      // Save using testDataHelper to ensure transaction visibility to HTTP requests
+      testDataHelper.saveUniverseInNewTransaction(sp500);
+      testDataHelper.saveUniverseInNewTransaction(sp500MidCap);
+      testDataHelper.saveUniverseInNewTransaction(russell2000);
 
       // Add some test constituents for each universe
       UUID sp500Id = UUID.fromString("00000000-0000-0000-0000-000000000001");
       UUID sp500MidCapId = UUID.fromString("00000000-0000-0000-0000-000000000002");
       UUID russell2000Id = UUID.fromString("00000000-0000-0000-0000-000000000003");
 
-      // Add constituents for S&P 500
-      universeConstituentRepository.saveAll(Arrays.asList(
-          createConstituent(sp500Id, "AAPL", "Apple Inc.", "Technology"),
-          createConstituent(sp500Id, "MSFT", "Microsoft Corporation", "Technology"),
-          createConstituent(sp500Id, "GOOGL", "Alphabet Inc.", "Technology")
-      ));
+      // Add constituents for S&P 500 - using testDataHelper for transaction visibility
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500Id, "AAPL", "Apple Inc.", "Technology"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500Id, "MSFT", "Microsoft Corporation", "Technology"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500Id, "GOOGL", "Alphabet Inc.", "Technology"));
 
       // Add constituents for S&P 500 + Mid-Caps
-      universeConstituentRepository.saveAll(Arrays.asList(
-          createConstituent(sp500MidCapId, "AAPL", "Apple Inc.", "Technology"),
-          createConstituent(sp500MidCapId, "MSFT", "Microsoft Corporation", "Technology"),
-          createConstituent(sp500MidCapId, "GOOGL", "Alphabet Inc.", "Technology"),
-          createConstituent(sp500MidCapId, "ZS", "Zscaler Inc.", "Technology")
-      ));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500MidCapId, "AAPL", "Apple Inc.", "Technology"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500MidCapId, "MSFT", "Microsoft Corporation", "Technology"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500MidCapId, "GOOGL", "Alphabet Inc.", "Technology"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(sp500MidCapId, "ZS", "Zscaler Inc.", "Technology"));
 
       // Add constituents for Russell 2000
-      universeConstituentRepository.saveAll(Arrays.asList(
-          createConstituent(russell2000Id, "CELH", "Celsius Holdings", "Consumer Staples"),
-          createConstituent(russell2000Id, "CHWY", "Chewy Inc.", "Consumer Discretionary")
-      ));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(russell2000Id, "CELH", "Celsius Holdings", "Consumer Staples"));
+      testDataHelper.saveConstituentInNewTransaction(createConstituent(russell2000Id, "CHWY", "Chewy Inc.", "Consumer Discretionary"));
     }
+
+    // Create test portfolio with fixed UUID for tests using testDataHelper
+    // This ensures the portfolio is created in a separate transaction and visible to HTTP requests
+    UUID testUserId = userRepository.findByEmail("testuser@example.com")
+        .orElseThrow(() -> new IllegalStateException("Test user not found")).getId();
+    testDataHelper.createTestPortfolio(
+        UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        testUserId
+    );
   }
 
   @AfterEach
   void cleanupTestData() {
     // Delete in reverse dependency order (child → parent)
     universeConstituentRepository.deleteAll();
+    portfolioRepository.deleteAll();
     universeRepository.deleteAll();
     userRepository.deleteAll();
   }

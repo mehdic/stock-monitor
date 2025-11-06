@@ -108,22 +108,28 @@ public class RecommendationService {
           java.time.Duration.between(savedRun.getStartedAt(), LocalDateTime.now()).toMillis());
       savedRun.setRecommendationCount(recommendations.size());
 
-      // Calculate aggregate metrics
-      BigDecimal avgAlpha =
-          recommendations.stream()
-              .map(Recommendation::getExpectedAlphaBps)
-              .reduce(BigDecimal.ZERO, BigDecimal::add)
-              .divide(
-                  BigDecimal.valueOf(recommendations.size()), 2, java.math.RoundingMode.HALF_UP);
-      savedRun.setExpectedAlphaBps(avgAlpha);
+      // Calculate aggregate metrics (only if recommendations exist)
+      if (!recommendations.isEmpty()) {
+        BigDecimal avgAlpha =
+            recommendations.stream()
+                .map(Recommendation::getExpectedAlphaBps)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(
+                    BigDecimal.valueOf(recommendations.size()), 2, java.math.RoundingMode.HALF_UP);
+        savedRun.setExpectedAlphaBps(avgAlpha);
 
-      BigDecimal avgCost =
-          recommendations.stream()
-              .map(Recommendation::getExpectedCostBps)
-              .reduce(BigDecimal.ZERO, BigDecimal::add)
-              .divide(
-                  BigDecimal.valueOf(recommendations.size()), 2, java.math.RoundingMode.HALF_UP);
-      savedRun.setEstimatedCostBps(avgCost);
+        BigDecimal avgCost =
+            recommendations.stream()
+                .map(Recommendation::getExpectedCostBps)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(
+                    BigDecimal.valueOf(recommendations.size()), 2, java.math.RoundingMode.HALF_UP);
+        savedRun.setEstimatedCostBps(avgCost);
+      } else {
+        // No recommendations - set defaults
+        savedRun.setExpectedAlphaBps(BigDecimal.ZERO);
+        savedRun.setEstimatedCostBps(BigDecimal.ZERO);
+      }
 
       savedRun.setDecision("PENDING"); // User needs to review
 

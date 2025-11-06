@@ -29,6 +29,7 @@ public class TestDataHelper {
   private final RecommendationRepository recommendationRepository;
   private final ConstraintSetRepository constraintSetRepository;
   private final UniverseRepository universeRepository;
+  private final UniverseConstituentRepository universeConstituentRepository;
   private final FactorModelVersionRepository factorModelVersionRepository;
   private final ObjectMapper objectMapper;
 
@@ -373,6 +374,29 @@ public class TestDataHelper {
             throw new RuntimeException("Failed to create test universe", e);
           }
         });
+  }
+
+  /**
+   * Save a universe in a new transaction, ensuring visibility to HTTP requests.
+   * Use this for test data that needs to be visible across transaction boundaries.
+   *
+   * @param universe the universe to save
+   * @return the saved universe
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Universe saveUniverseInNewTransaction(Universe universe) {
+    return universeRepository.save(universe);
+  }
+
+  /**
+   * Save a universe constituent in a new transaction.
+   *
+   * @param constituent the constituent to save
+   * @return the saved constituent
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public UniverseConstituent saveConstituentInNewTransaction(UniverseConstituent constituent) {
+    return universeConstituentRepository.save(constituent);
   }
 
   /**
