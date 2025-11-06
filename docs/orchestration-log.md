@@ -459,3 +459,158 @@ PM completed analysis of @Async production issue and tech debt.
 Spawning Developer for Group A (critical @Async fix)...
 
 ---
+
+## [2025-11-06T17:25:00Z] Developer Implementation - Group A (@Async Fix)
+
+### Context:
+Developer implemented database-backed async job queue per PM and Tech Lead guidance.
+
+**Implementation Completed:**
+- Created: BacktestStatus enum, AsyncConfiguration, database migration
+- Modified: Backtest entity, BacktestService (@Async), BacktestController (202 Accepted)
+- Updated: BacktestContractTest for async flow
+
+**Key Changes:**
+- POST /api/backtests returns 202 Accepted in < 100ms
+- Backtest saved to database with PENDING status
+- @Async processing in dedicated "backtest-*" thread pool (5-10 threads)
+- GET /api/backtests/{id} polls for results
+- Status flow: PENDING → RUNNING → COMPLETED/FAILED
+
+**Test Results:**
+- Total: 183 tests
+- Passing: 174 tests (95.1%)
+- Failing: 0
+- Skipped: 9 (MonthEndWorkflowTest - expected)
+- BacktestContractTest: 4/4 passing ✅
+
+**Success Criteria Met:**
+✅ POST returns 202 in < 100ms
+✅ Database persistence
+✅ Async background processing
+✅ Zero regressions
+
+### Orchestrator Decision:
+Spawning QA Expert for validation...
+
+---
+
+## [2025-11-06T17:30:00Z] QA Expert Validation - Group A
+
+### Context:
+QA Expert validated async backtest implementation.
+
+**Validation Results:**
+- Test Count: ✅ 174/183 passing (95.1%)
+- Previous Baseline: 172/183 → Improvement: +2 tests
+- Regressions: ✅ ZERO
+- BacktestContractTest: ✅ 4/4 passing
+- Async Architecture: ✅ Verified correct (@Async, thread pool, 202 Accepted)
+- Database Schema: ✅ Migration applied, fields present
+- Production Safety: ✅ Thread pool limits, error handling verified
+- Code Quality: ✅ Best practices followed
+
+**Critical Production Fix Validated:**
+- ✅ HTTP 202 Accepted (non-blocking)
+- ✅ Dedicated thread pool "backtestExecutor" (max 10 threads)
+- ✅ Database persistence (survives restarts)
+- ✅ Status flow: PENDING → RUNNING → COMPLETED/FAILED
+- ✅ No thread pool exhaustion risk
+
+**Final Verdict:** PASS ✅
+**QA Sign-off:** Approved for Tech Lead review
+
+### Orchestrator Decision:
+Spawning Tech Lead for code quality review...
+
+---
+
+## [2025-11-06T17:35:00Z] Tech Lead Code Review - Group A
+
+### Context:
+Tech Lead performed comprehensive code quality review of async implementation.
+
+**Review Scores:**
+- Architecture: 9/10 - Excellent async pattern implementation
+- Code Quality: 8/10 - Good Clean Code, minor smells
+- Production Readiness: 7/10 - Ready for single-server, missing observability
+- Security: 5/10 - **CRITICAL authorization gaps** ⚠️
+- Maintainability: 8/10 - Good readability, adequate tests
+
+**Overall Score:** 7/10 (would be 9/10 if security fixed)
+
+**CRITICAL SECURITY ISSUES FOUND:**
+
+1. **GET endpoint missing ownership validation** ❌
+   - Location: BacktestController:82-87, BacktestService:159-165
+   - Problem: Any authenticated user can access any backtest by UUID
+   - Impact: Data privacy violation, unauthorized access
+   - Severity: HIGH
+
+2. **POST endpoint missing portfolio ownership validation** ❌
+   - Location: BacktestController:42-76
+   - Problem: No validation that user owns the portfolio
+   - Impact: Unauthorized resource usage, potential DoS
+   - Severity: HIGH
+
+**Tech Lead Verdict:** CHANGES REQUESTED ❌
+
+**Rationale:**
+- Async implementation is architecturally excellent ✅
+- Code quality is good ✅
+- BUT authorization bypass vulnerabilities MUST be fixed before production
+- Fixes are straightforward (Tech Lead provided code samples)
+
+**Strengths:**
+- Critical production time bomb removed
+- Async job queue correctly implemented
+- Thread pool properly configured
+- Error handling comprehensive
+
+**Must-Fix Items:**
+1. Add ownership validation to GET /api/backtests/{id}
+2. Add portfolio ownership validation to POST /api/backtests
+3. Return 403 Forbidden (not 404) for unauthorized access
+
+**Nice-to-Have:**
+- Add rate limiting
+- Add Micrometer metrics
+- Extract DTO mapping to separate class
+
+### Orchestrator Decision:
+Escalating to PM for decision: Fix now or accept with documented risk...
+
+---
+
+## [2025-11-06T17:40:00Z] PM Strategic Decision - Fix Security Issues Now
+
+### Context:
+PM reviewed Tech Lead's security findings and made strategic decision.
+
+**Decision:** OPTION A - FIX NOW
+
+**Reasoning:**
+1. **Financial software demands security** - StockMonitor handles user financial data
+2. **Cannot ship with failing security** - 5/10 security score not acceptable
+3. **Clear path to resolution** - 35-50 min fix effort, code samples provided
+4. **Complete work > Fast work** - Better to deliver production-ready code once
+
+**Rejected Alternatives:**
+- Option B (Accept & Document): Creates technical debt, can't deploy to prod anyway
+- Option C (Partial Fix): Still not prod-ready with 1 gap, only saves 15-20 min
+
+**Updated Acceptance Criteria:**
+1. ✅ Async implementation complete
+2. ✅ Production time bomb removed
+3. ✅ Tests passing at 95%+ (174/183)
+4. ⏳ GET endpoint has ownership validation
+5. ⏳ POST endpoint has portfolio ownership validation
+6. ⏳ Authorization tests added
+7. ⏳ Tech Lead approval (Security: 9+/10)
+
+**Target:** 90% → 100% session completion
+
+### Orchestrator Decision:
+Spawning Developer for security hardening (Group A - Security Fixes)...
+
+---

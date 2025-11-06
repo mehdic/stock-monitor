@@ -202,4 +202,71 @@ public class BacktestContractTest extends BaseIntegrationTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("Start date must be before end date"));
   }
+
+  /**
+   * SECURITY TEST: GET /api/backtests/{id} returns 403 when user doesn't own the backtest.
+   *
+   * <p>Tests that users cannot access backtests owned by other users, preventing unauthorized
+   * data access.
+   */
+  @Test
+  @WithMockUser(username = "otheruser@example.com", roles = "OWNER")
+  public void testGetBacktest_whenUserDoesNotOwnBacktest_returns403() throws Exception {
+    // Given: backtestId is owned by testuser@example.com (created in setUp)
+    // When: otheruser@example.com tries to access it
+    // Then: Should return 403 Forbidden
+
+    // Create other user to authenticate as
+    testDataHelper.createTestUser("otheruser@example.com");
+
+    mockMvc
+        .perform(get("/api/backtests/{id}", backtestId))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.message").value("You don't have permission to access this backtest"));
+  }
+
+  /**
+   * SECURITY TEST: POST /api/backtests returns 403 when user doesn't own the portfolio.
+   *
+   * <p>Tests that users cannot create backtests for portfolios owned by other users, preventing
+   * unauthorized resource usage.
+   */
+  @Test
+  @WithMockUser(username = "otheruser@example.com", roles = "OWNER")
+  public void testCreateBacktest_whenUserDoesNotOwnPortfolio_returns403() throws Exception {
+    // Given: portfolioId is owned by testuser@example.com (created in setUp)
+    // When: otheruser@example.com tries to create backtest for it
+    // Then: Should return 403 Forbidden
+
+    // Create other user to authenticate as
+    testDataHelper.createTestUser("otheruser@example.com");
+
+    String requestBody =
+        String.format(
+            """
+            {
+              "portfolioId": "00000000-0000-0000-0000-000000000001",
+              "universeId": "%s",
+              "constraintSetId": "%s",
+              "name": "Test Backtest",
+              "startDate": "2022-01-01",
+              "endDate": "2024-01-01",
+              "constraints": {
+                "maxPositionSizePct": 10.0,
+                "maxSectorExposurePct": 25.0,
+                "maxTurnoverPct": 50.0,
+                "minMarketCapBn": 2.0,
+                "cashBufferPct": 5.0,
+                "minLiquidityTier": 2
+              }
+            }
+            """,
+            universeId,
+            getConstraintSetId());
+
+    mockMvc
+        .perform(post("/api/backtests").contentType(MediaType.APPLICATION_JSON).content(requestBody))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.message").value("You don't have permission to create backtests for this portfolio"));
+  }
 }

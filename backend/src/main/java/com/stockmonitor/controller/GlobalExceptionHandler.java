@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 @Slf4j
@@ -109,6 +110,22 @@ public class GlobalExceptionHandler {
 
     log.warn("Access denied: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+  }
+
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<ErrorResponse> handleResponseStatus(
+      ResponseStatusException ex, WebRequest request) {
+    ErrorResponse errorResponse =
+        ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(ex.getStatusCode().value())
+            .error(ex.getStatusCode().toString())
+            .message(ex.getReason())
+            .path(request.getDescription(false).replace("uri=", ""))
+            .build();
+
+    log.warn("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason());
+    return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
