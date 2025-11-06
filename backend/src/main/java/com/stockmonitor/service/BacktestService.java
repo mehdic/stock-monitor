@@ -1,11 +1,15 @@
 package com.stockmonitor.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.dto.BacktestConstraintsDTO;
 import com.stockmonitor.dto.BacktestDTO;
 import com.stockmonitor.engine.BacktestEngine;
 import com.stockmonitor.model.Backtest;
+import com.stockmonitor.model.BacktestStatus;
 import com.stockmonitor.repository.BacktestRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,27 +19,137 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service for backtest execution and storage (T177).
+ *
+ * <p>Implements async job queue pattern to prevent HTTP thread blocking during long-running backtest
+ * operations (5-120s when fully implemented).
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BacktestService {
 
-  // TODO: TECH_DEBT_001 - Refactor to use database persistence instead of in-memory storage
-  // This works but creates maintenance burden. See backlog item TECH_DEBT_001.
   private final BacktestEngine backtestEngine;
   private final BacktestRepository backtestRepository;
+  private final ObjectMapper objectMapper;
 
   /**
-   * Start backtest (async).
+   * Start a backtest asynchronously.
+   *
+   * <p>Creates backtest record with PENDING status, starts async processing, and returns immediately.
+   * Client polls GET /api/backtests/{id} for results.
+   *
+   * @return Backtest entity with status PENDING
    */
-  public BacktestDTO startBacktest(
-      UUID portfolioId, LocalDate startDate, LocalDate endDate, BacktestConstraintsDTO constraints) {
-    log.info("Starting backtest for portfolio: {}", portfolioId);
+  @Transactional
+  public Backtest startBacktest(
+      UUID portfolioId,
+      UUID userId,
+      UUID universeId,
+      UUID constraintSetId,
+      String name,
+      LocalDate startDate,
+      LocalDate endDate,
+      BacktestConstraintsDTO constraints) {
+    log.info("Creating backtest for portfolio: {}", portfolioId);
 
-    BacktestDTO result = backtestEngine.runBacktest(portfolioId, startDate, endDate, constraints);
+    // Save initial record with PENDING status
+    Backtest backtest = Backtest.builder()
+        .userId(userId)
+        .portfolioId(portfolioId)
+        .universeId(universeId)
+        .constraintSetId(constraintSetId)
+        .name(name)
+        .startDate(startDate)
+        .endDate(endDate)
+        .status(BacktestStatus.PENDING)
+        .initialCapital(new java.math.BigDecimal("1000000.00")) // Default initial capital
+        .equityCurveData("[]")
+        .turnoverHistory("[]")
+        .costAssumptions("{}")
+        .build();
 
-    return result;
+    // Store constraints as JSON for async processing
+    try {
+      String constraintsJson = objectMapper.writeValueAsString(constraints);
+      backtest.setConstraintsJson(constraintsJson);
+    } catch (JsonProcessingException e) {
+      log.error("Failed to serialize constraints", e);
+      throw new IllegalArgumentException("Invalid constraints", e);
+    }
+
+    backtest = backtestRepository.save(backtest);
+
+    // Start async processing (fire and forget)
+    executeBacktestAsync(backtest.getId(), portfolioId, startDate, endDate, constraints);
+
+    return backtest;
+  }
+
+  /**
+   * Execute backtest in background thread.
+   *
+   * <p>Updates database record when complete/failed. Runs in separate thread pool to avoid blocking
+   * HTTP threads.
+   */
+  @Async("backtestExecutor")
+  public void executeBacktestAsync(
+      UUID backtestId,
+      UUID portfolioId,
+      LocalDate startDate,
+      LocalDate endDate,
+      BacktestConstraintsDTO constraints) {
+
+    log.info("Starting async backtest execution: {}", backtestId);
+    LocalDateTime startTime = LocalDateTime.now();
+
+    try {
+      // Update status to RUNNING
+      Backtest backtest =
+          backtestRepository
+              .findById(backtestId)
+              .orElseThrow(
+                  () -> new IllegalStateException("Backtest not found: " + backtestId));
+
+      backtest.setStatus(BacktestStatus.RUNNING);
+      backtest.setStartedAt(startTime);
+      backtestRepository.save(backtest);
+
+      // Execute backtest (long-running operation, currently stub)
+      BacktestDTO result = backtestEngine.runBacktest(portfolioId, startDate, endDate, constraints);
+
+      // Update with results
+      backtest.setStatus(BacktestStatus.COMPLETED);
+      backtest.setCompletedAt(LocalDateTime.now());
+      backtest.setExecutionDurationMs(
+          java.time.Duration.between(startTime, LocalDateTime.now()).toMillis());
+      backtest.setCagrPct(result.getCagr());
+      backtest.setSharpeRatio(result.getSharpeRatio());
+      backtest.setMaxDrawdownPct(result.getMaxDrawdown());
+      backtest.setTotalReturnPct(result.getCagr()); // Using CAGR as total return for now
+      backtest.setAvgTurnoverPct(result.getAverageTurnover());
+      backtest.setBenchmarkReturnPct(result.getBenchmarkCAGR());
+      backtest.setBeatEqualWeight(result.getBeatEqualWeight());
+      backtest.setTotalCostBps(result.getTotalTransactionCosts());
+
+      backtestRepository.save(backtest);
+
+      log.info("Backtest completed successfully: {} (duration: {}ms)",
+          backtestId, backtest.getExecutionDurationMs());
+
+    } catch (Exception e) {
+      log.error("Backtest failed: " + backtestId, e);
+
+      // Update status to FAILED
+      Backtest backtest = backtestRepository.findById(backtestId).orElse(null);
+      if (backtest != null) {
+        backtest.setStatus(BacktestStatus.FAILED);
+        backtest.setCompletedAt(LocalDateTime.now());
+        backtest.setExecutionDurationMs(
+            java.time.Duration.between(startTime, LocalDateTime.now()).toMillis());
+        backtest.setErrorMessage(e.getMessage());
+        backtestRepository.save(backtest);
+      }
+    }
   }
 
   /**
@@ -56,8 +170,8 @@ public class BacktestService {
   private BacktestDTO convertToDTO(Backtest backtest) {
     return BacktestDTO.builder()
         .backtestId(backtest.getId())
-        .portfolioId(null) // Portfolio ID not stored in Backtest entity
-        .status(backtest.getStatus())
+        .portfolioId(backtest.getPortfolioId())
+        .status(backtest.getStatus() != null ? backtest.getStatus().name() : "PENDING")
         .startDate(backtest.getStartDate())
         .endDate(backtest.getEndDate())
         .cagr(backtest.getCagrPct())
@@ -69,6 +183,7 @@ public class BacktestService {
         .benchmarkCAGR(backtest.getBenchmarkReturnPct())
         .beatEqualWeight(backtest.getBeatEqualWeight())
         .totalTransactionCosts(backtest.getTotalCostBps())
+        .errorMessage(backtest.getErrorMessage())
         .build();
   }
 }
