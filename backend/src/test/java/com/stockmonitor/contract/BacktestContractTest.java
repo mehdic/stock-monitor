@@ -6,7 +6,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.stockmonitor.repository.PortfolioRepository;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -22,6 +25,47 @@ import org.springframework.test.web.servlet.MockMvc;
  * Get backtest results
  */
 public class BacktestContractTest extends BaseIntegrationTest {
+
+  @Autowired private PortfolioRepository portfolioRepository;
+
+  private String portfolioId;
+  private UUID userId;
+  private UUID backtestId;
+  private UUID universeId;
+
+  @BeforeEach
+  void setUp() {
+    // Create test universe
+    com.stockmonitor.model.Universe universe = testDataHelper.createTestUniverse("S&P 500");
+    universeId = universe.getId();
+
+    // Create test user
+    userRepository.findByEmail("testuser@example.com")
+        .orElseGet(() -> testDataHelper.createTestUser("testuser@example.com"));
+
+    userId = userRepository.findByEmail("testuser@example.com").orElseThrow().getId();
+
+    // Create test portfolio
+    portfolioId = "00000000-0000-0000-0000-000000000001";
+    testDataHelper.createTestPortfolio(UUID.fromString(portfolioId), userId);
+
+    // Create test backtest for testGetBacktestResults
+    backtestId = UUID.randomUUID();
+    testDataHelper.createTestBacktest(
+        backtestId,
+        userId,
+        universeId,
+        java.time.LocalDate.of(2022, 1, 1),
+        java.time.LocalDate.of(2024, 1, 1)
+    );
+  }
+
+  @AfterEach
+  void cleanupTestData() {
+    // Cleanup test data
+    portfolioRepository.deleteAll();
+    userRepository.deleteAll();
+  }
 
 
   /**
@@ -72,8 +116,6 @@ public class BacktestContractTest extends BaseIntegrationTest {
   @Test
   @WithMockUser(roles = "OWNER")
   public void testGetBacktestResults() throws Exception {
-    UUID backtestId = UUID.randomUUID();
-
     mockMvc
         .perform(get("/api/backtests/{id}", backtestId))
         .andExpect(status().isOk())
