@@ -1,0 +1,2 @@
+# Allow repository directory to be committed (we're caching dependencies)
+!repository/

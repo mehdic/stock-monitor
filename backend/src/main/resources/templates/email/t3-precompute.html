@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/base-email :: layout(
+    title='Month-End Recommendations: Pre-Compute Started',
+    subject='Month-End Recommendations: Pre-Compute Started',
+    content=~{::content},
+    actionLabel='View Status',
+    actionUrl=${actionUrl}
+)}">
+<body>
+<div th:fragment="content">
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+
+    <p>
+        We've started preparing your month-end portfolio recommendations. Our system is currently
+        pre-computing factor scores and gathering market data for <strong th:text="${monthEndDate}">month-end</strong>.
+    </p>
+
+    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
+        <strong style="color: #1f2937;">What's happening:</strong>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Fetching latest market data for all stocks in your universe</li>
+            <li>Calculating factor scores (Value, Momentum, Quality, Size, Volatility)</li>
+            <li>Preparing data for optimization</li>
+        </ul>
+    </div>
+
+    <p>
+        This is part of our 3-stage month-end process to ensure accurate and timely recommendations.
+        You'll receive another notification when staging is complete (T-1).
+    </p>
+
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+        <strong>Timeline:</strong><br/>
+        T-3 (Pre-Compute): <strong>In Progress</strong><br/>
+        T-1 (Staging): Scheduled for <span th:text="${t1Date}">date</span><br/>
+        T (Finalization): Scheduled for <span th:text="${t0Date}">date</span>
+    </p>
+</div>
+</body>
+</html>

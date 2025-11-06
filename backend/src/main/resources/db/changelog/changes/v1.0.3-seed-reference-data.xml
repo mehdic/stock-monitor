@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="1.0.3-1" author="stockmonitor" context="default">
+    <comment>Seed default universes</comment>
+    <insert tableName="universe">
+      <column name="id" value="00000000-0000-0000-0000-000000000001"/>
+      <column name="name" value="S&amp;P 500"/>
+      <column name="description" value="S&amp;P 500 large-cap US stocks"/>
+      <column name="type" value="PRESET"/>
+      <column name="benchmark_symbol" value="SPY"/>
+      <column name="constituent_count" valueNumeric="500"/>
+      <column name="min_market_cap" valueNumeric="10000"/>
+      <column name="liquidity_tier_threshold" valueComputed="'{&quot;tier1&quot;: 5000000, &quot;tier2&quot;: 1000000, &quot;tier3&quot;: 100000}'::jsonb"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="version" valueNumeric="1"/>
+      <column name="effective_date" valueDate="2024-01-01"/>
+    </insert>
+    <insert tableName="universe">
+      <column name="id" value="00000000-0000-0000-0000-000000000002"/>
+      <column name="name" value="S&amp;P 500 + Mid-Caps"/>
+      <column name="description" value="S&amp;P 500 plus S&amp;P 400 mid-cap stocks"/>
+      <column name="type" value="PRESET"/>
+      <column name="benchmark_symbol" value="IVV"/>
+      <column name="constituent_count" valueNumeric="900"/>
+      <column name="min_market_cap" valueNumeric="2000"/>
+      <column name="liquidity_tier_threshold" valueComputed="'{&quot;tier1&quot;: 5000000, &quot;tier2&quot;: 1000000, &quot;tier3&quot;: 100000}'::jsonb"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="version" valueNumeric="1"/>
+      <column name="effective_date" valueDate="2024-01-01"/>
+    </insert>
+    <insert tableName="universe">
+      <column name="id" value="00000000-0000-0000-0000-000000000003"/>
+      <column name="name" value="Russell 2000"/>
+      <column name="description" value="Russell 2000 small-cap US stocks"/>
+      <column name="type" value="PRESET"/>
+      <column name="benchmark_symbol" value="IWM"/>
+      <column name="constituent_count" valueNumeric="2000"/>
+      <column name="max_market_cap" valueNumeric="10000"/>
+      <column name="liquidity_tier_threshold" valueComputed="'{&quot;tier1&quot;: 1000000, &quot;tier2&quot;: 500000, &quot;tier3&quot;: 100000}'::jsonb"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="version" valueNumeric="1"/>
+      <column name="effective_date" valueDate="2024-01-01"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="1.0.3-2" author="stockmonitor" context="default">
+    <comment>Seed initial factor model version</comment>
+    <insert tableName="factor_model_version">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="version_number" value="1.0.0"/>
+      <column name="effective_date" valueDate="2024-01-01"/>
+      <column name="is_active" valueBoolean="true"/>
+      <column name="value_definition" valueComputed="'{&quot;metrics&quot;: [&quot;earnings_yield&quot;, &quot;book_to_market&quot;, &quot;fcf_yield&quot;], &quot;weights&quot;: [0.4, 0.3, 0.3]}'::jsonb"/>
+      <column name="momentum_definition" valueComputed="'{&quot;metrics&quot;: [&quot;12mo_1mo_return&quot;, &quot;6mo_1mo_return&quot;], &quot;weights&quot;: [0.6, 0.4]}'::jsonb"/>
+      <column name="quality_definition" valueComputed="'{&quot;metrics&quot;: [&quot;roe&quot;, &quot;roic&quot;, &quot;gross_margin&quot;, &quot;accruals&quot;], &quot;weights&quot;: [0.3, 0.3, 0.2, 0.2]}'::jsonb"/>
+      <column name="revisions_definition" valueComputed="'{&quot;metrics&quot;: [&quot;1mo_revision&quot;, &quot;3mo_revision&quot;, &quot;surprise&quot;], &quot;weights&quot;: [0.4, 0.3, 0.3]}'::jsonb"/>
+      <column name="sector_neutralization_method" value="Z_SCORE"/>
+      <column name="winsorization_percentile" valueNumeric="1.00"/>
+      <column name="composite_weighting" valueComputed="'{&quot;value&quot;: 0.25, &quot;momentum&quot;: 0.25, &quot;quality&quot;: 0.25, &quot;revisions&quot;: 0.25}'::jsonb"/>
+      <column name="description" value="Initial factor model version with equal weighting across four factors"/>
+      <column name="created_by" value="system"/>
+      <column name="approved_by" value="system"/>
+    </insert>
+  </changeSet>
+
+  <changeSet id="1.0.3-3" author="stockmonitor" context="default">
+    <comment>Seed default data sources</comment>
+    <insert tableName="data_source">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="name" value="Price Data"/>
+      <column name="source_type" value="PRICE"/>
+      <column name="provider" value="Alpha Vantage"/>
+      <column name="description" value="End-of-day price data for all securities"/>
+      <column name="refresh_frequency_hours" valueNumeric="24"/>
+      <column name="staleness_threshold_hours" valueNumeric="36"/>
+      <column name="health_status" value="UNKNOWN"/>
+      <column name="is_critical" valueBoolean="true"/>
+      <column name="is_active" valueBoolean="true"/>
+    </insert>
+    <insert tableName="data_source">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="name" value="Fundamental Data"/>
+      <column name="source_type" value="FUNDAMENTAL"/>
+      <column name="provider" value="Alpha Vantage"/>
+      <column name="description" value="Financial statements and fundamental metrics"/>
+      <column name="refresh_frequency_hours" valueNumeric="168"/>
+      <column name="staleness_threshold_hours" valueNumeric="336"/>
+      <column name="health_status" value="UNKNOWN"/>
+      <column name="is_critical" valueBoolean="true"/>
+      <column name="is_active" valueBoolean="true"/>
+    </insert>
+    <insert tableName="data_source">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="name" value="Analyst Estimates"/>
+      <column name="source_type" value="ESTIMATE"/>
+      <column name="provider" value="Alpha Vantage"/>
+      <column name="description" value="Consensus analyst estimates and revisions"/>
+      <column name="refresh_frequency_hours" valueNumeric="168"/>
+      <column name="staleness_threshold_hours" valueNumeric="336"/>
+      <column name="health_status" value="UNKNOWN"/>
+      <column name="is_critical" valueBoolean="true"/>
+      <column name="is_active" valueBoolean="true"/>
+    </insert>
+    <insert tableName="data_source">
+      <column name="id" valueComputed="gen_random_uuid()"/>
+      <column name="name" value="Earnings Calendar"/>
+      <column name="source_type" value="CALENDAR"/>
+      <column name="provider" value="Alpha Vantage"/>
+      <column name="description" value="Upcoming earnings announcement dates"/>
+      <column name="refresh_frequency_hours" valueNumeric="24"/>
+      <column name="staleness_threshold_hours" valueNumeric="48"/>
+      <column name="health_status" value="UNKNOWN"/>
+      <column name="is_critical" valueBoolean="true"/>
+      <column name="is_active" valueBoolean="true"/>
+    </insert>
+  </changeSet>
+
+</databaseChangeLog>

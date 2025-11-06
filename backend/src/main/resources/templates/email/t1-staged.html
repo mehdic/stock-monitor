@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{email/base-email :: layout(
+    title='Month-End Recommendations: Staging Complete',
+    subject='Month-End Recommendations: Staging Complete',
+    content=~{::content},
+    actionLabel='View Status',
+    actionUrl=${actionUrl}
+)}">
+<body>
+<div th:fragment="content">
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+
+    <p>
+        Great news! Your month-end recommendations for <strong th:text="${monthEndDate}">month-end</strong>
+        have been staged and are ready for finalization.
+    </p>
+
+    <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #10b981;">
+        <strong style="color: #065f46;">Data Freshness Check: <span th:text="${dataFreshStatus}">PASSED</span></strong>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #047857;">
+            All data used for your recommendations is current and meets our quality standards.
+        </p>
+    </div>
+
+    <div th:if="${dataStale}" class="disclaimer">
+        <strong>⚠️ Data Freshness Warning</strong>
+        <p style="margin: 10px 0 0 0;">
+            Some data sources are older than 48 hours. This may affect recommendation accuracy.
+            Please review your data sources in settings.
+        </p>
+    </div>
+
+    <p>
+        <strong>Next Steps:</strong>
+    </p>
+    <ul style="padding-left: 20px;">
+        <li>Final optimization will run on <strong th:text="${t0Date}">month-end date</strong></li>
+        <li>You'll receive your recommendations by email</li>
+        <li>Report will be available for download</li>
+    </ul>
+
+    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+        <strong>Timeline:</strong><br/>
+        T-3 (Pre-Compute): ✓ Complete<br/>
+        T-1 (Staging): <strong>✓ Complete</strong><br/>
+        T (Finalization): Scheduled for <span th:text="${t0Date}">date</span>
+    </p>
+</div>
+</body>
+</html>

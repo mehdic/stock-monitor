@@ -1,0 +1,374 @@
+{
+  "task": "Fix Remaining 71 Tests (Current: 112/183 passing)",
+  "status": "completed_partial",
+  "final_result": {
+    "starting_tests": "112/183 passing (61.2%)",
+    "final_tests": "116/183 passing (63.4%)",
+    "tests_fixed": 4,
+    "tests_remaining": 67,
+    "session_outcome": "Infrastructure fixes complete, feature implementations require multi-day effort"
+  },
+  "reality_check": {
+    "original_goal": "Fix all 71 tests in one session",
+    "discovery": "60+ tests require full feature implementations (controllers, services, business logic)",
+    "achievable_scope": "15-20 tests (infrastructure fixes only)",
+    "estimated_outcome": "127-132/183 tests passing (69-72%)",
+    "remaining_work": "56+ tests require multi-day feature development"
+  },
+  "created_at": "2025-11-04T14:52:00Z",
+  "current_state": {
+    "total_tests": 183,
+    "passing": 112,
+    "failures": 60,
+    "errors": 11,
+    "pass_rate": "61.2%"
+  },
+  "test_categories": {
+    "authorization_issues": {
+      "count": 28,
+      "tests": [
+        "ReportContractTest (10 tests) - 403 FORBIDDEN, using TestRestTemplate without JWT",
+        "RecommendationContractTest (10 tests) - 400/403 errors, TestRestTemplate without JWT",
+        "UniverseContractTest (6 tests) - data seeding + 400/403 errors",
+        "PortfolioContractTest (2 tests) - 403 vs 401 mismatch"
+      ],
+      "root_cause": "TestRestTemplate tests not including JWT tokens in HTTP headers"
+    },
+    "websocket_issues": {
+      "count": 4,
+      "tests": [
+        "WebSocketContractTest (4 tests) - HTTP 403 blocking WebSocket upgrade"
+      ],
+      "root_cause": "WebSocket connections rejected by security filter, need permitAll or JWT"
+    },
+    "data_seeding_issues": {
+      "count": 3,
+      "tests": [
+        "UniverseContractTest.testGetUniverses_ReturnsPresetUniverses - expecting 3, getting 0",
+        "UniverseContractTest.testGetUniverses_VerifyDefaultUniverses - missing S&P 500, etc."
+      ],
+      "root_cause": "Reference data not seeded in test environment"
+    },
+    "batch_workflow_issues": {
+      "count": 6,
+      "tests": [
+        "MonthEndWorkflowTest (6 tests) - NoSuchElement exceptions"
+      ],
+      "root_cause": "MonthEndScheduler methods not implemented or returning empty results"
+    },
+    "logic_errors": {
+      "count": 7,
+      "tests": [
+        "ConstraintModificationTest (2 tests) - calculation errors",
+        "OffCycleIsolationTest (2 tests) - 400 vs 201",
+        "OnboardingFlowTest (2 tests) - 500 error and 403 vs 401"
+      ],
+      "root_cause": "Implementation missing or incorrect"
+    },
+    "feature_implementations": {
+      "count": 23,
+      "tests": [
+        "Various tests expecting features not yet implemented"
+      ],
+      "root_cause": "TDD tests written but features not implemented"
+    }
+  },
+  "approaches": [
+    {
+      "id": "approach_1",
+      "name": "Layer-by-Layer (Infrastructure First)",
+      "description": "Fix infrastructure issues first (auth, websockets, data seeding), then implement features",
+      "pros": [
+        "Clear separation of concerns",
+        "Infrastructure fixes unblock many tests at once",
+        "Faster initial progress (28 tests from auth fix alone)",
+        "Systematic and organized"
+      ],
+      "cons": [
+        "May require switching context between different types of fixes",
+        "Some tests may need both infrastructure AND feature implementation"
+      ],
+      "estimated_time": "60-90 minutes",
+      "steps": [
+        {
+          "step": 1,
+          "name": "Fix Authentication Issues (28 tests)",
+          "actions": [
+            "Create authenticated TestRestTemplate helper in BaseIntegrationTest",
+            "Update ReportContractTest to use authenticated requests",
+            "Update RecommendationContractTest to use authenticated requests",
+            "Fix 401 vs 403 issues in PortfolioContractTest and UniverseContractTest"
+          ],
+          "expected_tests_fixed": 28
+        },
+        {
+          "step": 2,
+          "name": "Fix WebSocket Authentication (4 tests)",
+          "actions": [
+            "Add permitAll for /ws/** in TestSecurityConfig",
+            "Or implement JWT handshake for WebSocket connections"
+          ],
+          "expected_tests_fixed": 4
+        },
+        {
+          "step": 3,
+          "name": "Fix Data Seeding Issues (3 tests)",
+          "actions": [
+            "Ensure v1.0.3-seed-reference-data.xml is executed in test profile",
+            "Or create @BeforeEach setup in UniverseContractTest to seed universes",
+            "Seed 3 default universes: S&P 500, S&P 500 + Mid-Caps, Russell 2000"
+          ],
+          "expected_tests_fixed": 3
+        },
+        {
+          "step": 4,
+          "name": "Fix MonthEndWorkflowTest Issues (6 tests)",
+          "actions": [
+            "Implement MonthEndScheduler methods",
+            "Ensure proper data querying and updates"
+          ],
+          "expected_tests_fixed": 6
+        },
+        {
+          "step": 5,
+          "name": "Fix Logic Errors (7 tests)",
+          "actions": [
+            "Fix ConstraintModificationTest calculations",
+            "Fix OffCycleIsolationTest endpoints",
+            "Fix OnboardingFlowTest errors"
+          ],
+          "expected_tests_fixed": 7
+        },
+        {
+          "step": 6,
+          "name": "Implement Remaining Features (23 tests)",
+          "actions": [
+            "Implement missing endpoints and services",
+            "Follow existing patterns"
+          ],
+          "expected_tests_fixed": 23
+        }
+      ]
+    },
+    {
+      "id": "approach_2",
+      "name": "Domain-by-Domain (Feature Complete)",
+      "description": "Complete each domain fully before moving to next",
+      "pros": [
+        "Each domain becomes fully functional",
+        "Less context switching within a domain",
+        "Can test end-to-end workflows"
+      ],
+      "cons": [
+        "May duplicate effort",
+        "Slower initial progress",
+        "Dependencies between domains"
+      ],
+      "estimated_time": "75-105 minutes",
+      "steps": [
+        {
+          "step": 1,
+          "name": "Complete Universe Domain (9 tests)",
+          "expected_tests_fixed": 9
+        },
+        {
+          "step": 2,
+          "name": "Complete Portfolio Domain (5 tests)",
+          "expected_tests_fixed": 5
+        },
+        {
+          "step": 3,
+          "name": "Complete Recommendations Domain (10 tests)",
+          "expected_tests_fixed": 10
+        },
+        {
+          "step": 4,
+          "name": "Complete Reports Domain (10 tests)",
+          "expected_tests_fixed": 10
+        },
+        {
+          "step": 5,
+          "name": "Complete WebSocket Domain (4 tests)",
+          "expected_tests_fixed": 4
+        },
+        {
+          "step": 6,
+          "name": "Complete Integration Domain (33 tests)",
+          "expected_tests_fixed": 33
+        }
+      ]
+    },
+    {
+      "id": "approach_3",
+      "name": "Quick Wins First (Maximum Leverage)",
+      "description": "Start with fixes that unlock the most tests with least effort",
+      "pros": [
+        "Fastest path to 50%+ test pass rate",
+        "Early momentum and visible progress",
+        "Can identify cascade effects",
+        "Psychological boost from rapid progress"
+      ],
+      "cons": [
+        "May leave hardest problems for last",
+        "Less systematic"
+      ],
+      "estimated_time": "60-90 minutes",
+      "steps": [
+        {
+          "step": 1,
+          "name": "Global Auth Fix (28+ tests) - HIGHEST LEVERAGE",
+          "actions": [
+            "Create authenticated TestRestTemplate helper in BaseIntegrationTest",
+            "Update all TestRestTemplate tests to include JWT tokens via HttpHeaders",
+            "This unlocks: ReportContractTest (10), RecommendationContractTest (10), others (8+)"
+          ],
+          "expected_tests_fixed": 28,
+          "effort_minutes": 15
+        },
+        {
+          "step": 2,
+          "name": "Data Seeding Fix (3 tests) - QUICK WIN",
+          "actions": [
+            "Seed 3 universes in test setup",
+            "Either fix Liquibase execution or add @BeforeEach"
+          ],
+          "expected_tests_fixed": 3,
+          "effort_minutes": 10
+        },
+        {
+          "step": 3,
+          "name": "WebSocket Auth Fix (4 tests) - QUICK WIN",
+          "actions": [
+            "Add permitAll for /ws/** in TestSecurityConfig"
+          ],
+          "expected_tests_fixed": 4,
+          "effort_minutes": 10
+        },
+        {
+          "step": 4,
+          "name": "Implement Missing Endpoints (20-30 tests) - MEDIUM EFFORT",
+          "actions": [
+            "Systematically implement missing controller endpoints",
+            "Focus on GET endpoints first",
+            "Use existing patterns"
+          ],
+          "expected_tests_fixed": 25,
+          "effort_minutes": 40
+        },
+        {
+          "step": 5,
+          "name": "Fix MonthEndScheduler (6 tests) - MEDIUM EFFORT",
+          "actions": [
+            "Implement 3 scheduler methods",
+            "Ensure proper data querying"
+          ],
+          "expected_tests_fixed": 6,
+          "effort_minutes": 20
+        },
+        {
+          "step": 6,
+          "name": "Fix Remaining Logic Errors (5 tests) - CLEANUP",
+          "actions": [
+            "Debug and fix remaining issues"
+          ],
+          "expected_tests_fixed": 5,
+          "effort_minutes": 20
+        }
+      ]
+    }
+  ],
+  "chosen_approach": "approach_3",
+  "reasoning": [
+    "Approach 3 (Quick Wins First) offers the fastest path to significant progress",
+    "Single auth fix unlocks 28 tests immediately (39% of failing tests)",
+    "Quick wins build momentum and reveal cascade effects",
+    "Systematic enough to avoid technical debt",
+    "Total effort similar to Approach 1 but with better psychological pacing"
+  ],
+  "implementation_plan": {
+    "phase": "selection",
+    "selected_approach_details": {
+      "approach_id": "approach_3",
+      "total_steps": 6,
+      "estimated_total_time_minutes": 115,
+      "step_by_step_plan": [
+        {
+          "order": 1,
+          "name": "Global Auth Fix",
+          "leverage": "HIGH",
+          "effort": 15,
+          "tests_unlocked": 28,
+          "files_to_modify": [
+            "backend/src/test/java/com/stockmonitor/BaseIntegrationTest.java",
+            "backend/src/test/java/com/stockmonitor/contract/ReportContractTest.java",
+            "backend/src/test/java/com/stockmonitor/contract/RecommendationContractTest.java"
+          ],
+          "verification": "Run ReportContractTest and RecommendationContractTest"
+        },
+        {
+          "order": 2,
+          "name": "Data Seeding Fix",
+          "leverage": "MEDIUM",
+          "effort": 10,
+          "tests_unlocked": 3,
+          "files_to_modify": [
+            "backend/src/test/java/com/stockmonitor/contract/UniverseContractTest.java"
+          ],
+          "verification": "Run UniverseContractTest"
+        },
+        {
+          "order": 3,
+          "name": "WebSocket Auth Fix",
+          "leverage": "HIGH",
+          "effort": 10,
+          "tests_unlocked": 4,
+          "files_to_modify": [
+            "backend/src/test/java/com/stockmonitor/config/TestSecurityConfig.java"
+          ],
+          "verification": "Run WebSocketContractTest"
+        },
+        {
+          "order": 4,
+          "name": "Implement Missing Endpoints",
+          "leverage": "MEDIUM",
+          "effort": 40,
+          "tests_unlocked": 25,
+          "files_to_modify": [
+            "Multiple controller and service files"
+          ],
+          "verification": "Run full test suite"
+        },
+        {
+          "order": 5,
+          "name": "Fix MonthEndScheduler",
+          "leverage": "MEDIUM",
+          "effort": 20,
+          "tests_unlocked": 6,
+          "files_to_modify": [
+            "backend/src/main/java/com/stockmonitor/scheduler/MonthEndScheduler.java"
+          ],
+          "verification": "Run MonthEndWorkflowTest"
+        },
+        {
+          "order": 6,
+          "name": "Fix Remaining Logic Errors",
+          "leverage": "LOW",
+          "effort": 20,
+          "tests_unlocked": 5,
+          "files_to_modify": [
+            "Various service files"
+          ],
+          "verification": "Run full test suite - should be 183/183"
+        }
+      ]
+    }
+  },
+  "success_metrics": [
+    "After Step 1: 140/183 tests passing (76%)",
+    "After Step 2: 143/183 tests passing (78%)",
+    "After Step 3: 147/183 tests passing (80%)",
+    "After Step 4: 172/183 tests passing (94%)",
+    "After Step 5: 178/183 tests passing (97%)",
+    "After Step 6: 183/183 tests passing (100%)"
+  ]
+}
