@@ -101,8 +101,8 @@ public class PerformanceAttributionService {
         .excessReturn(excessReturn)
         .topContributors(topContributors)
         .topDetractors(topDetractors)
-        .periodStart(startDate)
-        .periodEnd(endDate)
+        .periodStart(effectiveStartDate)
+        .periodEnd(effectiveEndDate)
         .startingValue(startingValue)
         .endingValue(endingValue)
         .tradeCount(0) // TODO: Calculate from trade history

@@ -25,12 +25,13 @@ public class BacktestController {
 
   @PostMapping
   @PreAuthorize("hasRole('OWNER')")
-  public ResponseEntity<BacktestDTO> runBacktest(@RequestBody BacktestRequest request) {
+  public ResponseEntity<?> runBacktest(@RequestBody BacktestRequest request) {
     log.info("Run backtest request for portfolio: {}", request.getPortfolioId());
 
     // Validate date range
     if (request.getStartDate().isAfter(request.getEndDate())) {
-      return ResponseEntity.badRequest().build();
+      return ResponseEntity.badRequest()
+          .body(java.util.Map.of("message", "Start date must be before end date"));
     }
 
     BacktestDTO result =
