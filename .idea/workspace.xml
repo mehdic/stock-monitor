@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6c6b832f-5ed0-421f-9026-a47f5bd4834c" name="Changes" comment="Add workspace configuration and update orchestration documentation">
-      <change afterPath="$PROJECT_DIR$/.claude/agents/project_manager.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.claude/agents/qa_expert.md" afterDir="false" />
+    <list default="true" id="6c6b832f-5ed0-421f-9026-a47f5bd4834c" name="Changes" comment="Add workspace configuration and project manager documentation">
       <change afterPath="$PROJECT_DIR$/otherProjects/specKit/templates/design-system-template.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.claude/commands/orchestrate.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/commands/orchestrate.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/orchestrator.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/techlead.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/techlead.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit/spec-driven.md" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit/spec-driven.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit/templates/commands/analyze.md" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit/templates/commands/analyze.md" afterDir="false" />
@@ -27,7 +26,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/mchaouachi/IdeaProjects/StockMonitor/.claude/commands"
+    "last_opened_file_path": "/Users/mchaouachi/IdeaProjects/StockMonitor/.claude/commands",
+    "node.js.selected.package.tslint": "(autodetect)"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -56,6 +56,13 @@
       </method>
     </configuration>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
     <task id="LOCAL-00001" summary="Add workspace configuration and update orchestration documentation">
       <option name="closed" value="true" />
@@ -65,11 +72,20 @@
       <option name="project" value="LOCAL" />
       <updated>1762416430657</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Add workspace configuration and project manager documentation">
+      <option name="closed" value="true" />
+      <created>1762423814472</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762423814472</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add workspace configuration and update orchestration documentation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add workspace configuration and update orchestration documentation" />
+    <MESSAGE value="Add workspace configuration and project manager documentation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add workspace configuration and project manager documentation" />
   </component>
 </project>
