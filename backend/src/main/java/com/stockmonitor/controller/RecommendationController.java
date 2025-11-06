@@ -139,7 +139,7 @@ public class RecommendationController {
    */
   @GetMapping("/api/runs")
   public ResponseEntity<List<RecommendationRunDTO>> getAllRuns(
-      @RequestParam(required = false) String runType) {
+      @RequestParam(name = "run_type", required = false) String runType) {
     log.info("Get runs request with run_type filter: {}", runType);
 
     // Get authenticated user's ID

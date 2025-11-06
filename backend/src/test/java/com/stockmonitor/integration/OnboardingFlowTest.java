@@ -2,7 +2,10 @@ package com.stockmonitor.integration;
 
 import com.stockmonitor.BaseIntegrationTest;
 import com.stockmonitor.dto.*;
+import com.stockmonitor.dto.TriggerRunRequest;
+import com.stockmonitor.model.ConstraintSet;
 import com.stockmonitor.model.User;
+import com.stockmonitor.repository.ConstraintSetRepository;
 import com.stockmonitor.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,15 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -33,25 +34,19 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private WebApplicationContext context;
+    private ConstraintSetRepository constraintSetRepository;
 
-    private MockMvc mockMvc;
     private String testEmail;
     private String testPassword;
 
     @BeforeEach
-    public void setup() {
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .apply(springSecurity())
-                .build();
-
+    public void setup() throws Exception {
         testEmail = "test-" + UUID.randomUUID() + "@example.com";
         testPassword = "Test123!@#";
     }
 
     @Test
-    public void testCompleteOnboardingFlow() {
+    public void testCompleteOnboardingFlow() throws Exception {
         // Step 1: User Registration
         RegisterRequest registerRequest = RegisterRequest.builder()
                 .email(testEmail)
@@ -76,6 +71,14 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
         assertThat(user.getFirstName()).isEqualTo("Test");
         assertThat(user.getLastName()).isEqualTo("User");
 
+        // Create active ConstraintSet for the user (required by triggerRecommendationRun)
+        ConstraintSet constraintSet = ConstraintSet.builder()
+                .userId(user.getId())
+                .name("Test Constraints")
+                .isActive(true)
+                .build();
+        constraintSetRepository.save(constraintSet);
+
         // Step 2: Login
         LoginRequest loginRequest = LoginRequest.builder()
                 .email(testEmail)
@@ -95,95 +98,75 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
 
         String jwtToken = loginResponse.getBody().getToken();
 
-        // Step 3: Create Portfolio
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(jwtToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
+        // Step 3: Create Portfolio (using MockMvc to avoid streaming authentication issues)
         PortfolioDTO createPortfolioRequest = PortfolioDTO.builder()
                 .userId(user.getId())
                 .build();
 
-        HttpEntity<PortfolioDTO> portfolioRequest = new HttpEntity<>(createPortfolioRequest, headers);
+        String portfolioResponseJson = mockMvc.perform(post("/api/portfolios")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createPortfolioRequest)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
 
-        ResponseEntity<PortfolioDTO> portfolioResponse = testRestTemplate.exchange(
-                url("/api/portfolios"),
-                HttpMethod.POST,
-                portfolioRequest,
-                PortfolioDTO.class
-        );
-
-        assertThat(portfolioResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(portfolioResponse.getBody()).isNotNull();
-        UUID portfolioId = portfolioResponse.getBody().getId();
+        PortfolioDTO portfolioDto = objectMapper.readValue(portfolioResponseJson, PortfolioDTO.class);
+        assertThat(portfolioDto).isNotNull();
+        UUID portfolioId = portfolioDto.getId();
         assertThat(portfolioId).isNotNull();
 
         // Step 4: Upload Holdings (simulated CSV)
         // Note: This would need MockMvc for multipart file upload
         // For now, we test that the endpoint exists and requires authentication
 
-        // Step 5: Get Available Universes
-        HttpEntity<Void> universeRequest = new HttpEntity<>(headers);
+        // Step 5: Get Available Universes (using MockMvc to avoid streaming authentication issues)
+        String universesResponseJson = mockMvc.perform(get("/api/universes")
+                .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
 
-        ResponseEntity<UniverseDTO[]> universesResponse = testRestTemplate.exchange(
-                url("/api/universes"),
-                HttpMethod.GET,
-                universeRequest,
-                UniverseDTO[].class
-        );
+        UniverseDTO[] universes = objectMapper.readValue(universesResponseJson, UniverseDTO[].class);
+        assertThat(universes).isNotNull();
+        assertThat(universes.length).isGreaterThan(0);
 
-        assertThat(universesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(universesResponse.getBody()).isNotNull();
-        assertThat(universesResponse.getBody().length).isGreaterThan(0);
+        UUID universeId = universes[0].getId();
 
-        UUID universeId = universesResponse.getBody()[0].getId();
+        // Step 6: Get Active Constraints (using MockMvc to avoid streaming authentication issues)
+        mockMvc.perform(get("/api/portfolios/" + portfolioId + "/constraints")
+                .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk());
 
-        // Step 6: Get Active Constraints
-        ResponseEntity<ConstraintSetDTO> constraintsResponse = testRestTemplate.exchange(
-                url("/api/portfolios/" + portfolioId + "/constraints"),
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                ConstraintSetDTO.class
-        );
+        // Step 7: Trigger Recommendation Run (using MockMvc to avoid streaming authentication issues)
+        TriggerRunRequest triggerRequest = new TriggerRunRequest();
+        triggerRequest.setPortfolioId(portfolioId);
+        triggerRequest.setUniverseId(universeId);
 
-        assertThat(constraintsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        String runResponseJson = mockMvc.perform(post("/api/runs")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(triggerRequest)))
+                .andExpect(status().isAccepted())
+                .andReturn().getResponse().getContentAsString();
 
-        // Step 7: Trigger Recommendation Run
-        String runUrl = url(String.format("/api/runs?portfolioId=%s&universeId=%s", portfolioId, universeId));
-
-        ResponseEntity<RecommendationRunDTO> runResponse = testRestTemplate.exchange(
-                runUrl,
-                HttpMethod.POST,
-                new HttpEntity<>(headers),
-                RecommendationRunDTO.class
-        );
-
-        assertThat(runResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(runResponse.getBody()).isNotNull();
-        UUID runId = runResponse.getBody().getId();
+        RecommendationRunDTO runDto = objectMapper.readValue(runResponseJson, RecommendationRunDTO.class);
+        assertThat(runDto).isNotNull();
+        UUID runId = runDto.getId();
         assertThat(runId).isNotNull();
-        assertThat(runResponse.getBody().getStatus()).isIn("RUNNING", "COMPLETED");
+        assertThat(runDto.getStatus()).isIn("RUNNING", "COMPLETED");
 
-        // Step 8: Get Run Details
-        ResponseEntity<RecommendationRunDTO> runDetailsResponse = testRestTemplate.exchange(
-                url("/api/runs/" + runId),
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                RecommendationRunDTO.class
-        );
+        // Step 8: Get Run Details (using MockMvc to avoid streaming authentication issues)
+        String runDetailsResponseJson = mockMvc.perform(get("/api/runs/" + runId)
+                .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
 
-        assertThat(runDetailsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(runDetailsResponse.getBody()).isNotNull();
+        RecommendationRunDTO runDetails = objectMapper.readValue(runDetailsResponseJson, RecommendationRunDTO.class);
+        assertThat(runDetails).isNotNull();
 
-        // Step 9: Get Recommendations (if run completed)
-        ResponseEntity<RecommendationDTO[]> recommendationsResponse = testRestTemplate.exchange(
-                url("/api/runs/" + runId + "/recommendations"),
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                RecommendationDTO[].class
-        );
-
-        assertThat(recommendationsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        // Step 9: Get Recommendations (if run completed) - using MockMvc to avoid streaming authentication issues
+        mockMvc.perform(get("/api/runs/" + runId + "/recommendations")
+                .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk());
         // Recommendations array may be empty if run is still processing or no holdings uploaded
     }
 
@@ -206,7 +189,7 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testLoginWithWrongPassword() {
+    public void testLoginWithWrongPassword() throws Exception {
         // First register
         RegisterRequest registerRequest = RegisterRequest.builder()
                 .email(testEmail)
@@ -215,21 +198,18 @@ public class OnboardingFlowTest extends BaseIntegrationTest {
                 .lastName("User")
                 .build();
 
-        testRestTemplate.postForEntity("/api/auth/register", registerRequest, UserDTO.class);
+        testRestTemplate.postForEntity(url("/api/auth/register"), registerRequest, UserDTO.class);
 
-        // Then try to login with wrong password
+        // Then try to login with wrong password (using MockMvc to avoid streaming authentication issues)
         LoginRequest loginRequest = LoginRequest.builder()
                 .email(testEmail)
                 .password("WrongPassword123!")
                 .build();
 
-        ResponseEntity<String> response = testRestTemplate.postForEntity(
-                url("/api/auth/login"),
-                loginRequest,
-                String.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

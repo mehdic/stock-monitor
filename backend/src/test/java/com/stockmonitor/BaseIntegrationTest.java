@@ -1,5 +1,6 @@
 package com.stockmonitor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.config.TestSecurityConfig;
 import com.stockmonitor.helper.TestDataHelper;
 import com.stockmonitor.repository.UserRepository;
@@ -82,6 +83,7 @@ public abstract class BaseIntegrationTest {
   @Autowired protected PasswordEncoder passwordEncoder;
   @Autowired protected TestDataHelper testDataHelper;
   @Autowired protected TestRestTemplate testRestTemplate;
+  @Autowired protected ObjectMapper objectMapper;
 
   @org.springframework.boot.test.web.server.LocalServerPort
   protected int port;
