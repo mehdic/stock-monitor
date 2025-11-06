@@ -1,7 +1,7 @@
 package com.stockmonitor.engine;
 
+import com.stockmonitor.dto.BacktestConstraintsDTO;
 import com.stockmonitor.dto.BacktestDTO;
-import com.stockmonitor.dto.ConstraintSetDTO;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,11 +27,11 @@ public class BacktestEngine {
    * @param portfolioId Portfolio to backtest
    * @param startDate Backtest start
    * @param endDate Backtest end
-   * @param constraints Constraint set to apply
+   * @param constraints Backtest constraint set to apply
    * @return Backtest results
    */
   public BacktestDTO runBacktest(
-      UUID portfolioId, LocalDate startDate, LocalDate endDate, ConstraintSetDTO constraints) {
+      UUID portfolioId, LocalDate startDate, LocalDate endDate, BacktestConstraintsDTO constraints) {
     log.info(
         "Running backtest for portfolio {} from {} to {}", portfolioId, startDate, endDate);
 
@@ -41,22 +41,17 @@ public class BacktestEngine {
     // 3. Calculate equity curve
     // 4. Compute performance metrics
 
-    // Stub implementation returns mock data
+    // Stub implementation returns mock data with RUNNING status
+    // (In real implementation, this would be an async operation)
+    java.time.LocalDateTime estimatedCompletion = java.time.LocalDateTime.now().plusMinutes(5);
+
     return BacktestDTO.builder()
         .backtestId(UUID.randomUUID())
         .portfolioId(portfolioId)
-        .status("COMPLETED")
+        .status("RUNNING")
         .startDate(startDate)
         .endDate(endDate)
-        .cagr(BigDecimal.valueOf(12.5))
-        .sharpeRatio(BigDecimal.valueOf(1.2))
-        .maxDrawdown(BigDecimal.valueOf(-15.0))
-        .equityCurve(new ArrayList<>())
-        .averageTurnover(BigDecimal.valueOf(35.0))
-        .tradeCount(48)
-        .benchmarkCAGR(BigDecimal.valueOf(10.0))
-        .beatEqualWeight(true)
-        .totalTransactionCosts(BigDecimal.valueOf(1250.00))
+        .estimatedCompletion(estimatedCompletion)
         .build();
   }
 }

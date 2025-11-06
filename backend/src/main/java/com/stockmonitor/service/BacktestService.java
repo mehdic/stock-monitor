@@ -1,7 +1,7 @@
 package com.stockmonitor.service;
 
+import com.stockmonitor.dto.BacktestConstraintsDTO;
 import com.stockmonitor.dto.BacktestDTO;
-import com.stockmonitor.dto.ConstraintSetDTO;
 import com.stockmonitor.engine.BacktestEngine;
 import com.stockmonitor.model.Backtest;
 import com.stockmonitor.repository.BacktestRepository;
@@ -29,9 +29,8 @@ public class BacktestService {
   /**
    * Start backtest (async).
    */
-  @Async
   public BacktestDTO startBacktest(
-      UUID portfolioId, LocalDate startDate, LocalDate endDate, ConstraintSetDTO constraints) {
+      UUID portfolioId, LocalDate startDate, LocalDate endDate, BacktestConstraintsDTO constraints) {
     log.info("Starting backtest for portfolio: {}", portfolioId);
 
     BacktestDTO result = backtestEngine.runBacktest(portfolioId, startDate, endDate, constraints);
