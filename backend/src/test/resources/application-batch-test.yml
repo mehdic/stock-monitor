@@ -1,0 +1,62 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+
+  liquibase:
+    enabled: false
+
+  h2:
+    console:
+      enabled: false
+
+  data:
+    redis:
+      repositories:
+        enabled: false
+  cache:
+    type: none
+
+  mail:
+    host: localhost
+    port: 3025
+
+  batch:
+    job:
+      enabled: false  # Don't auto-run jobs on startup in tests
+    jdbc:
+      initialize-schema: always
+
+  websocket:
+    enabled: false
+
+  # Allow bean overriding for test mocks
+  main:
+    allow-bean-definition-overriding: true
+
+logging:
+  level:
+    root: WARN
+    com.stockmonitor: INFO
+    org.testcontainers: INFO
+    org.springframework.test: INFO
+    org.hibernate: WARN
+    org.springframework.batch: INFO
+
+app:
+  batch:
+    enabled: true
+  jwt:
+    secret: dGVzdHNlY3JldGtleWZvcnVuaXR0ZXN0c29ubHltdXN0YmVhdGxlYXN0MjU2Yml0c2xvbmdmb3JoczI1NmFsZ29yaXRobQ==
+    expiration-ms: 3600000

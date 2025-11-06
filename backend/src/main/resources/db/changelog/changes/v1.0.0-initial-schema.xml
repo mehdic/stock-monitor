@@ -1,0 +1,947 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="1.0.0-1" author="stockmonitor">
+    <comment>Create Universe table</comment>
+    <createTable tableName="universe">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="name" type="varchar(100)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="description" type="varchar(500)"/>
+      <column name="type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="benchmark_symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constituent_count" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="min_market_cap" type="decimal(19,4)"/>
+      <column name="max_market_cap" type="decimal(19,4)"/>
+      <column name="liquidity_tier_threshold" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="version" type="integer" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="effective_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="1.0.0-2" author="stockmonitor">
+    <comment>Create User table</comment>
+    <createTable tableName="app_user">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="email" type="varchar(255)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="password_hash" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="first_name" type="varchar(100)"/>
+      <column name="last_name" type="varchar(100)"/>
+      <column name="base_currency" type="varchar(3)" defaultValue="USD">
+        <constraints nullable="false"/>
+      </column>
+      <column name="selected_universe_id" type="uuid"/>
+      <column name="role" type="varchar(20)" defaultValue="OWNER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="email_verified" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="disclaimer_accepted_at" type="timestamp"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_login_at" type="timestamp"/>
+      <column name="timezone" type="varchar(50)" defaultValue="America/New_York">
+        <constraints nullable="false"/>
+      </column>
+      <column name="notification_preferences" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="app_user"
+        baseColumnNames="selected_universe_id"
+        constraintName="fk_user_universe"
+        referencedTableName="universe"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-3" author="stockmonitor">
+    <comment>Create Portfolio table</comment>
+    <createTable tableName="portfolio">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="cash_balance" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="total_market_value" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="total_cost_basis" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="unrealized_pnl" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="unrealized_pnl_pct" type="decimal(10,6)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="benchmark_return_pct" type="decimal(10,6)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="relative_return_pct" type="decimal(10,6)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="universe_coverage_pct" type="decimal(5,2)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_calculated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="portfolio"
+        baseColumnNames="user_id"
+        constraintName="fk_portfolio_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-4" author="stockmonitor">
+    <comment>Create Holding table</comment>
+    <createTable tableName="holding">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="portfolio_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="quantity" type="decimal(19,6)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="cost_basis" type="decimal(19,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="cost_basis_per_share" type="decimal(19,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="acquisition_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="currency" type="varchar(3)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="current_price" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="current_market_value" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="unrealized_pnl" type="decimal(19,4)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="unrealized_pnl_pct" type="decimal(10,6)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="weight_pct" type="decimal(5,2)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="in_universe" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector" type="varchar(50)"/>
+      <column name="market_cap_tier" type="varchar(20)"/>
+      <column name="fx_rate_to_base" type="decimal(19,8)" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="price_updated_at" type="timestamp"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="holding"
+        baseColumnNames="portfolio_id"
+        constraintName="fk_holding_portfolio"
+        referencedTableName="portfolio"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-5" author="stockmonitor">
+    <comment>Create UniverseConstituent table</comment>
+    <createTable tableName="universe_constituent">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="universe_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="company_name" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="industry" type="varchar(100)"/>
+      <column name="market_cap_tier" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="liquidity_tier" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="avg_daily_volume" type="decimal(19,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="avg_daily_value" type="decimal(19,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="added_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="removed_date" type="date"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="universe_constituent"
+        baseColumnNames="universe_id"
+        constraintName="fk_constituent_universe"
+        referencedTableName="universe"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-6" author="stockmonitor">
+    <comment>Create ConstraintSet table</comment>
+    <createTable tableName="constraint_set">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="varchar(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="max_name_weight_large_cap_pct" type="decimal(5,2)" defaultValueNumeric="5.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="max_name_weight_mid_cap_pct" type="decimal(5,2)" defaultValueNumeric="2.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="max_name_weight_small_cap_pct" type="decimal(5,2)" defaultValueNumeric="1.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="max_sector_exposure_pct" type="decimal(5,2)" defaultValueNumeric="20.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="turnover_cap_pct" type="decimal(5,2)" defaultValueNumeric="25.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="weight_deadband_bps" type="integer" defaultValueNumeric="30">
+        <constraints nullable="false"/>
+      </column>
+      <column name="participation_cap_tier1_pct" type="decimal(5,2)" defaultValueNumeric="10.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="participation_cap_tier2_pct" type="decimal(5,2)" defaultValueNumeric="7.50">
+        <constraints nullable="false"/>
+      </column>
+      <column name="participation_cap_tier3_pct" type="decimal(5,2)" defaultValueNumeric="5.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="participation_cap_tier4_pct" type="decimal(5,2)" defaultValueNumeric="3.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="participation_cap_tier5_pct" type="decimal(5,2)" defaultValueNumeric="1.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="spread_threshold_bps" type="integer" defaultValueNumeric="50">
+        <constraints nullable="false"/>
+      </column>
+      <column name="earnings_blackout_hours" type="integer" defaultValueNumeric="48">
+        <constraints nullable="false"/>
+      </column>
+      <column name="liquidity_floor_adv_usd" type="decimal(19,4)" defaultValueNumeric="1000000.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="cost_margin_required_bps" type="integer" defaultValueNumeric="20">
+        <constraints nullable="false"/>
+      </column>
+      <column name="version" type="integer" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="constraint_set"
+        baseColumnNames="user_id"
+        constraintName="fk_constraint_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-7" author="stockmonitor">
+    <comment>Create FactorModelVersion table</comment>
+    <createTable tableName="factor_model_version">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="version_number" type="varchar(20)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="effective_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="value_definition" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="momentum_definition" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="quality_definition" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="revisions_definition" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector_neutralization_method" type="varchar(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="winsorization_percentile" type="decimal(5,2)" defaultValueNumeric="1.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="composite_weighting" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="varchar(1000)"/>
+      <column name="created_by" type="varchar(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="approved_by" type="varchar(100)"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="1.0.0-8" author="stockmonitor">
+    <comment>Create DataSource table</comment>
+    <createTable tableName="data_source">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="name" type="varchar(100)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="source_type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="provider" type="varchar(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="description" type="varchar(500)"/>
+      <column name="refresh_frequency_hours" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="staleness_threshold_hours" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_successful_update" type="timestamp"/>
+      <column name="last_attempted_update" type="timestamp"/>
+      <column name="last_update_duration_ms" type="bigint"/>
+      <column name="record_count" type="bigint"/>
+      <column name="health_status" type="varchar(20)" defaultValue="UNKNOWN">
+        <constraints nullable="false"/>
+      </column>
+      <column name="error_message" type="varchar(1000)"/>
+      <column name="consecutive_failures" type="integer" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="uptime_pct_30d" type="decimal(5,2)"/>
+      <column name="is_critical" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="is_active" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="1.0.0-9" author="stockmonitor">
+    <comment>Create RecommendationRun table</comment>
+    <createTable tableName="recommendation_run">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="universe_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constraint_set_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="run_type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="varchar(20)" defaultValue="SCHEDULED">
+        <constraints nullable="false"/>
+      </column>
+      <column name="scheduled_date" type="date"/>
+      <column name="started_at" type="timestamp"/>
+      <column name="completed_at" type="timestamp"/>
+      <column name="execution_duration_ms" type="bigint"/>
+      <column name="recommendation_count" type="integer" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="exclusion_count" type="integer" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="expected_turnover_pct" type="decimal(5,2)"/>
+      <column name="estimated_cost_bps" type="decimal(7,2)"/>
+      <column name="expected_alpha_bps" type="decimal(7,2)"/>
+      <column name="decision" type="varchar(20)" defaultValue="PENDING">
+        <constraints nullable="false"/>
+      </column>
+      <column name="decision_reason" type="varchar(500)"/>
+      <column name="previous_run_id" type="uuid"/>
+      <column name="error_message" type="varchar(1000)"/>
+      <column name="data_freshness_check_passed" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constraint_feasibility_check_passed" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="recommendation_run"
+        baseColumnNames="user_id"
+        constraintName="fk_run_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="recommendation_run"
+        baseColumnNames="universe_id"
+        constraintName="fk_run_universe"
+        referencedTableName="universe"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="recommendation_run"
+        baseColumnNames="constraint_set_id"
+        constraintName="fk_run_constraint"
+        referencedTableName="constraint_set"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="recommendation_run"
+        baseColumnNames="previous_run_id"
+        constraintName="fk_run_previous"
+        referencedTableName="recommendation_run"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-10" author="stockmonitor">
+    <comment>Create Recommendation table</comment>
+    <createTable tableName="recommendation">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="run_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="rank" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="target_weight_pct" type="decimal(5,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="current_weight_pct" type="decimal(5,2)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="weight_change_pct" type="decimal(5,2)" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="confidence_score" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="expected_cost_bps" type="decimal(7,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="expected_alpha_bps" type="decimal(7,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="edge_over_cost_bps" type="decimal(7,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver1_name" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver1_score" type="decimal(7,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver2_name" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver2_score" type="decimal(7,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver3_name" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="driver3_score" type="decimal(7,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="explanation" type="varchar(1000)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constraint_notes" type="varchar(500)"/>
+      <column name="risk_contribution_pct" type="decimal(5,2)"/>
+      <column name="change_indicator" type="varchar(20)" defaultValue="NEW">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="market_cap_tier" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="liquidity_tier" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="current_price" type="decimal(19,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="recommendation"
+        baseColumnNames="run_id"
+        constraintName="fk_recommendation_run"
+        referencedTableName="recommendation_run"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-11" author="stockmonitor">
+    <comment>Create Exclusion table</comment>
+    <createTable tableName="exclusion">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="run_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="exclusion_reason_code" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="exclusion_reason_text" type="varchar(500)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="market_cap_tier" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="liquidity_tier" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="failed_constraint_name" type="varchar(100)"/>
+      <column name="failed_constraint_value" type="decimal(19,4)"/>
+      <column name="failed_constraint_threshold" type="decimal(19,4)"/>
+      <column name="current_price" type="decimal(19,4)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="exclusion"
+        baseColumnNames="run_id"
+        constraintName="fk_exclusion_run"
+        referencedTableName="recommendation_run"
+        referencedColumnNames="id"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-12" author="stockmonitor">
+    <comment>Create FactorScore table</comment>
+    <createTable tableName="factor_score">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="symbol" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="factor_type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="calculation_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="raw_score" type="decimal(10,6)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector_normalized_score" type="decimal(10,6)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="percentile_rank_sector" type="decimal(5,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="percentile_rank_universe" type="decimal(5,2)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sector" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="component_breakdown" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="data_quality_score" type="integer" defaultValueNumeric="100">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="1.0.0-13" author="stockmonitor">
+    <comment>Create Backtest table</comment>
+    <createTable tableName="backtest">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="universe_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constraint_set_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="varchar(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="start_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="end_date" type="date">
+        <constraints nullable="false"/>
+      </column>
+      <column name="initial_capital" type="decimal(19,4)" defaultValueNumeric="1000000.00">
+        <constraints nullable="false"/>
+      </column>
+      <column name="final_value" type="decimal(19,4)"/>
+      <column name="total_return_pct" type="decimal(10,6)"/>
+      <column name="cagr_pct" type="decimal(10,6)"/>
+      <column name="volatility_pct" type="decimal(10,6)"/>
+      <column name="sharpe_ratio" type="decimal(7,4)"/>
+      <column name="max_drawdown_pct" type="decimal(10,6)"/>
+      <column name="hit_rate_pct" type="decimal(5,2)"/>
+      <column name="avg_turnover_pct" type="decimal(5,2)"/>
+      <column name="total_cost_bps" type="decimal(10,2)"/>
+      <column name="benchmark_return_pct" type="decimal(10,6)"/>
+      <column name="alpha_pct" type="decimal(10,6)"/>
+      <column name="beat_equal_weight" type="boolean"/>
+      <column name="verdict_text" type="varchar(500)"/>
+      <column name="equity_curve_data" type="jsonb" defaultValue="'[]'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="turnover_history" type="jsonb" defaultValue="'[]'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="cost_assumptions" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="varchar(20)" defaultValue="PENDING">
+        <constraints nullable="false"/>
+      </column>
+      <column name="error_message" type="varchar(1000)"/>
+      <column name="execution_duration_ms" type="bigint"/>
+      <column name="started_at" type="timestamp"/>
+      <column name="completed_at" type="timestamp"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="backtest"
+        baseColumnNames="user_id"
+        constraintName="fk_backtest_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="backtest"
+        baseColumnNames="universe_id"
+        constraintName="fk_backtest_universe"
+        referencedTableName="universe"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="backtest"
+        baseColumnNames="constraint_set_id"
+        constraintName="fk_backtest_constraint"
+        referencedTableName="constraint_set"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-14" author="stockmonitor">
+    <comment>Create Report table</comment>
+    <createTable tableName="report">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="run_id" type="uuid">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="report_type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="format" type="varchar(10)" defaultValue="HTML">
+        <constraints nullable="false"/>
+      </column>
+      <column name="file_path" type="varchar(500)"/>
+      <column name="file_size_bytes" type="bigint"/>
+      <column name="summary_text" type="varchar(2000)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="recommendation_count" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="exclusion_count" type="integer">
+        <constraints nullable="false"/>
+      </column>
+      <column name="constraint_snapshot" type="jsonb" defaultValue="'{}'::jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="performance_metrics" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="cost_analysis" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="disclaimer_text" type="varchar(5000)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="disclaimer_version" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="generation_timestamp" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="downloaded_at" type="timestamp"/>
+      <column name="download_count" type="integer" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="report"
+        baseColumnNames="run_id"
+        constraintName="fk_report_run"
+        referencedTableName="recommendation_run"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="report"
+        baseColumnNames="user_id"
+        constraintName="fk_report_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-15" author="stockmonitor">
+    <comment>Create Notification table</comment>
+    <createTable tableName="notification">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="run_id" type="uuid"/>
+      <column name="notification_type" type="varchar(30)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="channel" type="varchar(20)" defaultValue="IN_APP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="priority" type="varchar(20)" defaultValue="NORMAL">
+        <constraints nullable="false"/>
+      </column>
+      <column name="subject" type="varchar(200)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="message" type="varchar(2000)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="action_url" type="varchar(500)"/>
+      <column name="action_label" type="varchar(50)"/>
+      <column name="is_read" type="boolean" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="read_at" type="timestamp"/>
+      <column name="sent_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="delivery_status" type="varchar(20)" defaultValue="SENT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="delivery_error" type="varchar(500)"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="notification"
+        baseColumnNames="user_id"
+        constraintName="fk_notification_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+        baseTableName="notification"
+        baseColumnNames="run_id"
+        constraintName="fk_notification_run"
+        referencedTableName="recommendation_run"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-16" author="stockmonitor">
+    <comment>Create AuditLog table</comment>
+    <createTable tableName="audit_log">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="uuid"/>
+      <column name="entity_type" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="entity_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="action" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="action_detail" type="varchar(200)"/>
+      <column name="before_state" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="after_state" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="changed_fields" type="text[]"/>
+      <column name="ip_address" type="varchar(45)"/>
+      <column name="user_agent" type="varchar(500)"/>
+      <column name="session_id" type="varchar(100)"/>
+      <column name="request_id" type="varchar(100)"/>
+      <column name="success" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="error_message" type="varchar(1000)"/>
+      <column name="execution_duration_ms" type="bigint"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addForeignKeyConstraint
+        baseTableName="audit_log"
+        baseColumnNames="user_id"
+        constraintName="fk_audit_user"
+        referencedTableName="app_user"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
+  </changeSet>
+
+</databaseChangeLog>

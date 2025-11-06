@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: stockmonitor-postgres
+    environment:
+      POSTGRES_DB: stockmonitor
+      POSTGRES_USER: stockmonitor_user
+      POSTGRES_PASSWORD: stockmonitor_pass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockmonitor_user -d stockmonitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stockmonitor-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: stockmonitor-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass stockmonitor_redis_pass
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stockmonitor-network
+
+  # Optional: PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: stockmonitor-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stockmonitor.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - stockmonitor-network
+    profiles:
+      - dev
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: stockmonitor-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:stockmonitor_redis_pass
+    ports:
+      - "8082:8081"
+    depends_on:
+      - redis
+    networks:
+      - stockmonitor-network
+    profiles:
+      - dev
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  stockmonitor-network:
+    driver: bridge
