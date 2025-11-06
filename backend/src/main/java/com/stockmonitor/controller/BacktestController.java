@@ -3,6 +3,9 @@ package com.stockmonitor.controller;
 import com.stockmonitor.dto.BacktestConstraintsDTO;
 import com.stockmonitor.dto.BacktestDTO;
 import com.stockmonitor.model.Backtest;
+import com.stockmonitor.model.Portfolio;
+import com.stockmonitor.repository.BacktestRepository;
+import com.stockmonitor.repository.PortfolioRepository;
 import com.stockmonitor.repository.UserRepository;
 import com.stockmonitor.service.BacktestService;
 import java.time.LocalDate;
@@ -31,6 +34,8 @@ public class BacktestController {
 
   private final BacktestService backtestService;
   private final UserRepository userRepository;
+  private final BacktestRepository backtestRepository;
+  private final PortfolioRepository portfolioRepository;
 
   /**
    * POST /api/backtests - Start backtest (returns immediately).
@@ -58,6 +63,18 @@ public class BacktestController {
             .orElseThrow(() -> new IllegalStateException("User not found: " + userEmail))
             .getId();
 
+    // CRITICAL SECURITY FIX: Validate portfolio ownership BEFORE starting backtest
+    Portfolio portfolio = portfolioRepository
+        .findById(request.getPortfolioId())
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Portfolio not found"));
+
+    if (!portfolio.getUserId().equals(userId)) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "You don't have permission to create backtests for this portfolio");
+    }
+
     // Start async backtest (returns immediately with PENDING status)
     Backtest backtest =
         backtestService.startBacktest(
@@ -82,6 +99,30 @@ public class BacktestController {
   @PreAuthorize("hasRole('OWNER') or hasRole('VIEWER')")
   public ResponseEntity<BacktestDTO> getBacktest(@PathVariable UUID id) {
     log.info("Get backtest results: {}", id);
+
+    // Get authenticated user ID
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = auth.getName();
+    UUID userId =
+        userRepository
+            .findByEmail(userEmail)
+            .orElseThrow(() -> new IllegalStateException("User not found: " + userEmail))
+            .getId();
+
+    // Fetch backtest entity for ownership validation
+    Backtest backtestEntity = backtestRepository
+        .findById(id)
+        .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Backtest not found"));
+
+    // CRITICAL SECURITY FIX: Validate ownership
+    if (!backtestEntity.getUserId().equals(userId)) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "You don't have permission to access this backtest");
+    }
+
+    // Convert to DTO and return
     BacktestDTO backtest = backtestService.getBacktest(id);
     return backtest != null ? ResponseEntity.ok(backtest) : ResponseEntity.notFound().build();
   }

@@ -13,12 +13,14 @@
     "T7: Write new tests for async behavior",
     "T8: Verify no thread blocking under concurrent load",
     "T9: OPTIONAL: Fix OffCycleIsolationTest (2 tests, test ordering)",
-    "T10: SKIP: MonthEndWorkflowTest (9 tests, poor ROI)"
+    "T10: SKIP: MonthEndWorkflowTest (9 tests, poor ROI)",
+    "T11: SECURITY FIX - Add ownership validation to GET /api/backtests/{id}",
+    "T12: SECURITY FIX - Add portfolio ownership validation to POST /api/backtests"
   ],
   "task_groups": [
     {
       "id": "A",
-      "name": "Fix @Async Production Time Bomb - Database-Backed Job Queue",
+      "name": "Fix @Async Production Time Bomb - Database-Backed Job Queue + Security Hardening",
       "tasks": [
         "T1: Implement database-backed async job queue",
         "T2: Add Backtest entity status field",
@@ -27,7 +29,9 @@
         "T5: Update BacktestController GET → poll database",
         "T6: Configure Spring @Async with custom executor",
         "T7: Write async behavior tests",
-        "T8: Verify no thread blocking"
+        "T8: Verify no thread blocking",
+        "T11: SECURITY FIX - Add ownership validation to GET endpoint",
+        "T12: SECURITY FIX - Add portfolio ownership validation to POST endpoint"
       ],
       "files_affected": [
         "backend/src/main/java/com/stockmonitor/service/BacktestService.java",
@@ -41,9 +45,16 @@
       "can_parallel": false,
       "depends_on": [],
       "complexity": "high",
-      "estimated_effort_minutes": 180,
+      "estimated_effort_minutes": 225,
       "priority": "CRITICAL",
-      "rationale": "Production safety issue. Current synchronous flow will block HTTP threads when real backtest is implemented (5-120 seconds per backtest). Just 10-20 concurrent requests will exhaust thread pool (200 threads) causing cascading failure across ALL endpoints. Database-backed queue provides persistence, audit trail, and scalability."
+      "rationale": "Production safety issue. Current synchronous flow will block HTTP threads when real backtest is implemented (5-120 seconds per backtest). Just 10-20 concurrent requests will exhaust thread pool (200 threads) causing cascading failure across ALL endpoints. Database-backed queue provides persistence, audit trail, and scalability. SECURITY: Tech Lead found 2 HIGH severity authorization bypasses that must be fixed before production deployment.",
+      "status": "in_progress_security_fixes",
+      "progress": {
+        "async_implementation": "COMPLETE (174/183 tests passing, +2 improvement)",
+        "qe_validation": "PASS (no regressions, async correctly implemented)",
+        "tech_lead_review": "CHANGES REQUESTED (security issues)",
+        "remaining_work": "Fix 2 HIGH severity authorization bypasses"
+      }
     },
     {
       "id": "B",
@@ -69,7 +80,7 @@
     {
       "phase": 1,
       "groups": ["A"],
-      "description": "MANDATORY: Fix @Async production time bomb with database-backed job queue"
+      "description": "MANDATORY: Fix @Async production time bomb with database-backed job queue + security hardening"
     },
     {
       "phase": 2,
@@ -78,22 +89,25 @@
     }
   ],
   "completed_groups": [],
-  "in_progress_groups": [],
-  "pending_groups": ["A", "B"],
-  "iteration": 1,
-  "last_update": "2025-11-06T18:30:00Z",
-  "completion_percentage": 0,
-  "estimated_time_remaining_minutes": 180,
+  "in_progress_groups": ["A"],
+  "pending_groups": ["B"],
+  "iteration": 8,
+  "last_update": "2025-11-06T19:15:00Z",
+  "completion_percentage": 90,
+  "estimated_time_remaining_minutes": 60,
   "strategic_decisions": {
     "prioritization": "@Async fix FIRST (production safety) > test debt (cosmetic). ROI: 3-4h prevents outages vs 5-8h for test suite health.",
     "scope": "MANDATORY: Group A (@Async). OPTIONAL: Group B (OffCycleIsolationTest). SKIP: MonthEndWorkflowTest (9 tests, 4-6h, uncertain success, poor ROI).",
     "execution_mode": "SIMPLE (sequential). Async changes affect service + tests. Sequential prevents conflicts and allows validating async tests before touching test infrastructure.",
-    "user_question_answer": "Q: Why remove @Async? A: To fix BacktestContractTest. Q: Production impact? A: YES - CRITICAL. Current stub returns instantly (no problem), but real backtest (5-120s) will BLOCK threads, causing production outages. Must implement database-backed job queue."
+    "user_question_answer": "Q: Why remove @Async? A: To fix BacktestContractTest. Q: Production impact? A: YES - CRITICAL. Current stub returns instantly (no problem), but real backtest (5-120s) will BLOCK threads, causing production outages. Must implement database-backed job queue.",
+    "security_fix_decision": "OPTION A - FIX NOW. Tech Lead found 2 HIGH severity authorization bypasses (GET and POST endpoints). In financial software, authorization bypasses are non-negotiable security gaps. Fixes are straightforward (35-50 min) with code samples provided. Better to deliver production-ready secure code than create technical debt. Total investment (4 hours) is acceptable for production-ready async refactor + security hardening."
   },
   "risk_assessment": {
     "if_not_fixed": "When real backtest is implemented: (1) Each backtest blocks HTTP thread for 5-120 seconds, (2) 10-20 concurrent requests exhaust thread pool (200 threads), (3) ALL endpoints become unresponsive (cascading failure), (4) Poor UX (users wait minutes), (5) Timeouts and 503 errors.",
     "if_fixed": "POST returns 202 immediately, async processing in background, GET polls for results. HTTP threads never blocked. Scales to hundreds of concurrent backtests. Survives server restarts. Full audit trail.",
-    "implementation_risk": "MEDIUM - Architectural change, new async configuration, database schema update. But well-scoped with Tech Lead guidance (Option B)."
+    "implementation_risk": "MEDIUM - Architectural change, new async configuration, database schema update. But well-scoped with Tech Lead guidance (Option B).",
+    "security_risk_if_not_fixed": "HIGH severity authorization bypasses: (1) Any user can access any backtest by guessing UUID (data privacy violation), (2) Any user can run backtests on portfolios they don't own (resource abuse, DoS). Impact: GDPR violations, reputational damage, potential legal liability. Cannot deploy to production with these gaps.",
+    "security_risk_mitigation": "Straightforward fixes (35-50 min) with Tech Lead code samples. Add ownership validation to GET and POST endpoints. Low risk of introducing bugs."
   },
   "success_criteria": {
     "group_A": [
@@ -104,7 +118,11 @@
       "GET /api/backtests/{id} returns current status from database",
       "BacktestContractTest still passes with new async flow",
       "No thread blocking under 20 concurrent backtest requests",
-      "All existing tests still pass (zero regressions)"
+      "All existing tests still pass (zero regressions)",
+      "GET /api/backtests/{id} validates user owns the backtest (returns 403 if not)",
+      "POST /api/backtests validates user owns the portfolio (returns 403 if not)",
+      "Authorization tests added for both endpoints",
+      "Tech Lead approval (Security: 9+/10, Overall: 9+/10)"
     ],
     "group_B": [
       "OffCycleIsolationTest: 2/2 tests pass in full suite (not just isolation)"
@@ -114,5 +132,51 @@
     "item": "MonthEndWorkflowTest (9 tests)",
     "reason": "Poor ROI. Complex transaction isolation issue, 4-6h uncertain investment. Low business value (functionality works, cosmetic test suite). Tech Lead recommends deferring to future sprint.",
     "estimated_effort_saved": "240-360 minutes"
+  },
+  "tech_lead_feedback": {
+    "iteration": 7,
+    "timestamp": "2025-11-06T19:00:00Z",
+    "overall_score": "7/10 (would be 9/10 if security fixed)",
+    "scores": {
+      "architecture": "9/10 - Excellent database-backed job queue",
+      "code_quality": "8/10 - Clean, maintainable code",
+      "production_readiness": "7/10 - Ready for single-server, needs horizontal scaling",
+      "security": "5/10 - CRITICAL authorization bypass gaps",
+      "maintainability": "8/10 - Well-structured, documented"
+    },
+    "critical_issues": [
+      {
+        "issue": "GET endpoint missing ownership validation",
+        "location": "BacktestController.getBacktest()",
+        "severity": "HIGH",
+        "impact": "Any user can access any backtest by UUID (data privacy violation)",
+        "fix_effort_minutes": 20,
+        "status": "MUST FIX BEFORE PRODUCTION"
+      },
+      {
+        "issue": "POST endpoint missing portfolio ownership validation",
+        "location": "BacktestController.createBacktest()",
+        "severity": "HIGH",
+        "impact": "Users can run backtests on portfolios they don't own (resource abuse, DoS)",
+        "fix_effort_minutes": 30,
+        "status": "MUST FIX BEFORE PRODUCTION"
+      }
+    ],
+    "nice_to_have": [
+      "Add rate limiting",
+      "Add Micrometer metrics",
+      "Extract DTO mapping to separate class",
+      "Add unit tests for DTO mapping"
+    ],
+    "recommendation": "Fix both security issues before merging to production. Fixes are straightforward with code samples provided. Implementation is otherwise excellent."
+  },
+  "current_test_status": {
+    "total_tests": 183,
+    "passing": 174,
+    "failing": 9,
+    "pass_rate": "95.1%",
+    "improvement": "+2 tests (fixed OffCycleIsolationTest)",
+    "regressions": 0,
+    "remaining_failures": "7 MonthEndWorkflowTest (skipped - poor ROI)"
   }
 }
