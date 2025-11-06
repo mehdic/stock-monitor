@@ -36,6 +36,7 @@ public class RecommendationRunDTO {
   private UUID previousRunId;
   private String errorMessage;
   private Boolean dataFreshnessCheckPassed;
+  private String dataFreshnessSnapshot;
   private Boolean constraintFeasibilityCheckPassed;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -63,6 +64,7 @@ public class RecommendationRunDTO {
         .previousRunId(run.getPreviousRunId())
         .errorMessage(run.getErrorMessage())
         .dataFreshnessCheckPassed(run.getDataFreshnessCheckPassed())
+        .dataFreshnessSnapshot(run.getDataFreshnessSnapshot())
         .constraintFeasibilityCheckPassed(run.getConstraintFeasibilityCheckPassed())
         .createdAt(run.getCreatedAt())
         .updatedAt(run.getUpdatedAt())
