@@ -1,7 +1,7 @@
 package com.stockmonitor.controller;
 
+import com.stockmonitor.dto.BacktestConstraintsDTO;
 import com.stockmonitor.dto.BacktestDTO;
-import com.stockmonitor.dto.ConstraintSetDTO;
 import com.stockmonitor.service.BacktestService;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -57,6 +57,6 @@ public class BacktestController {
     private UUID portfolioId;
     private LocalDate startDate;
     private LocalDate endDate;
-    private ConstraintSetDTO constraints;
+    private BacktestConstraintsDTO constraints;
   }
 }
