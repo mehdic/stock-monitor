@@ -2,6 +2,7 @@ package com.stockmonitor.helper;
 
 import com.stockmonitor.model.*;
 import com.stockmonitor.repository.*;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class TestDataHelper {
   private final UniverseConstituentRepository universeConstituentRepository;
   private final FactorModelVersionRepository factorModelVersionRepository;
   private final ObjectMapper objectMapper;
+  private final EntityManager entityManager;
 
   /**
    * Create or get a test user in a new transaction.
@@ -64,7 +66,10 @@ public class TestDataHelper {
               .enabled(true)
               .role(role)
               .build();
-          return userRepository.save(user);
+          User savedUser = userRepository.save(user);
+          entityManager.flush(); // Ensure immediate write to DB
+          entityManager.clear(); // Clear persistence context for transaction isolation
+          return savedUser;
         });
   }
 
@@ -106,7 +111,10 @@ public class TestDataHelper {
                     .activeConstraintSetId(savedConstraintSet.getId())
                     .activeUniverseId(UUID.randomUUID()) // Set a default universe
                     .build();
-                return portfolioRepository.save(portfolio);
+                Portfolio savedPortfolio = portfolioRepository.save(portfolio);
+                entityManager.flush(); // Ensure immediate write to DB
+                entityManager.clear(); // Clear persistence context for transaction isolation
+                return savedPortfolio;
               });
         });
   }
@@ -385,7 +393,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Universe saveUniverseInNewTransaction(Universe universe) {
-    return universeRepository.save(universe);
+    Universe saved = universeRepository.save(universe);
+    entityManager.flush(); // Ensure immediate write to DB
+    entityManager.clear(); // Clear persistence context for transaction isolation
+    return saved;
   }
 
   /**
@@ -396,7 +407,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public UniverseConstituent saveConstituentInNewTransaction(UniverseConstituent constituent) {
-    return universeConstituentRepository.save(constituent);
+    UniverseConstituent saved = universeConstituentRepository.save(constituent);
+    entityManager.flush(); // Ensure immediate write to DB
+    entityManager.clear(); // Clear persistence context for transaction isolation
+    return saved;
   }
 
   /**
