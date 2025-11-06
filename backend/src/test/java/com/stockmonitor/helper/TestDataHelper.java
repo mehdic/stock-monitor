@@ -582,4 +582,75 @@ public class TestDataHelper {
           }
         });
   }
+
+  /**
+   * Create a test backtest with specific ID in a new transaction.
+   *
+   * @param backtestId the backtest ID
+   * @param userId the user ID
+   * @param universeId the universe ID
+   * @param startDate the start date
+   * @param endDate the end date
+   * @return the created backtest
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public com.stockmonitor.model.Backtest createTestBacktest(UUID backtestId, UUID userId, UUID universeId, LocalDate startDate, LocalDate endDate) {
+    // Create constraint set for backtest
+    ConstraintSet constraintSet = constraintSetRepository
+        .findByUserIdAndIsActiveTrue(userId)
+        .orElseGet(() -> {
+          ConstraintSet cs = ConstraintSet.builder()
+              .userId(userId)
+              .name("Test Constraints")
+              .isActive(true)
+              .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+              .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+              .turnoverCapPct(BigDecimal.valueOf(25.0))
+              .version(1)
+              .build();
+          return constraintSetRepository.save(cs);
+        });
+
+    LocalDateTime now = LocalDateTime.now();
+
+    // Use native SQL to insert with specific ID
+    entityManager.createNativeQuery(
+        "INSERT INTO backtest (id, user_id, universe_id, constraint_set_id, name, start_date, end_date, " +
+        "initial_capital, final_value, total_return_pct, cagr_pct, volatility_pct, sharpe_ratio, " +
+        "max_drawdown_pct, hit_rate_pct, avg_turnover_pct, total_cost_bps, " +
+        "benchmark_return_pct, beat_equal_weight, status, equity_curve_data, turnover_history, cost_assumptions, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .setParameter(1, backtestId)
+        .setParameter(2, userId)
+        .setParameter(3, universeId)
+        .setParameter(4, constraintSet.getId())
+        .setParameter(5, "Test Backtest")
+        .setParameter(6, startDate)
+        .setParameter(7, endDate)
+        .setParameter(8, BigDecimal.valueOf(1000000.00))
+        .setParameter(9, BigDecimal.valueOf(1250000.00))
+        .setParameter(10, BigDecimal.valueOf(25.00))
+        .setParameter(11, BigDecimal.valueOf(12.50))
+        .setParameter(12, BigDecimal.valueOf(18.20))
+        .setParameter(13, BigDecimal.valueOf(0.89))
+        .setParameter(14, BigDecimal.valueOf(-15.30))
+        .setParameter(15, BigDecimal.valueOf(58.30))
+        .setParameter(16, BigDecimal.valueOf(22.80))
+        .setParameter(17, BigDecimal.valueOf(54.32))
+        .setParameter(18, BigDecimal.valueOf(10.20))
+        .setParameter(19, true)
+        .setParameter(20, "COMPLETED")
+        .setParameter(21, "[]")
+        .setParameter(22, "[]")
+        .setParameter(23, "{}")
+        .setParameter(24, now)
+        .setParameter(25, now)
+        .executeUpdate();
+
+    // Flush and clear to ensure data is persisted
+    entityManager.flush();
+    entityManager.clear();
+
+    return entityManager.find(com.stockmonitor.model.Backtest.class, backtestId);
+  }
 }
