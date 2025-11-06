@@ -32,6 +32,86 @@ public class TestDataHelper {
   private final UniverseConstituentRepository universeConstituentRepository;
   private final FactorModelVersionRepository factorModelVersionRepository;
   private final ObjectMapper objectMapper;
+  private final jakarta.persistence.EntityManager entityManager;
+
+  public PortfolioRepository getPortfolioRepository() {
+    return portfolioRepository;
+  }
+
+  /**
+   * Get the ID of the first universe (for tests that need a valid universe).
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public UUID getFirstUniverseId() {
+    return universeRepository.findAll().stream().findFirst()
+        .map(com.stockmonitor.model.Universe::getId)
+        .orElseThrow(() -> new IllegalStateException("No universes found - TestDataInitializer may not have run"));
+  }
+
+  /**
+   * Create portfolio with specific universe ID.
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Portfolio createTestPortfolioWithUniverse(UUID portfolioId, UUID userId, UUID universeId) {
+    // First check if portfolio exists by portfolioId
+    Portfolio portfolio = portfolioRepository.findById(portfolioId)
+        .orElseGet(() -> {
+          // Delete any existing portfolio for this user to avoid unique constraint violation
+          portfolioRepository.findByUserId(userId).ifPresent(existing -> {
+            // Delete holdings first (foreign key constraint)
+            holdingRepository.deleteByPortfolioId(existing.getId());
+            portfolioRepository.delete(existing);
+            entityManager.flush(); // Ensure deletion is persisted before creating new one
+          });
+
+          // Create constraint set for portfolio
+          ConstraintSet constraintSet = ConstraintSet.builder()
+              .userId(userId)
+              .name("Default Constraints")
+              .isActive(true)
+              .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+              .maxNameWeightMidCapPct(BigDecimal.valueOf(5.0))
+              .maxNameWeightSmallCapPct(BigDecimal.valueOf(2.0))
+              .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+              .turnoverCapPct(BigDecimal.valueOf(25.0))
+              .version(1)
+              .build();
+          ConstraintSet savedConstraintSet = constraintSetRepository.save(constraintSet);
+
+          LocalDateTime now = LocalDateTime.now();
+
+          // Use native SQL to insert portfolio with specific ID (to bypass @GeneratedValue)
+          entityManager.createNativeQuery(
+              "INSERT INTO portfolio (id, user_id, cash_balance, total_market_value, total_cost_basis, " +
+              "unrealized_pnl, unrealized_pnl_pct, benchmark_return_pct, relative_return_pct, " +
+              "universe_coverage_pct, active_universe_id, active_constraint_set_id, last_calculated_at, " +
+              "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+              .setParameter(1, portfolioId)
+              .setParameter(2, userId)
+              .setParameter(3, BigDecimal.valueOf(100000.00))
+              .setParameter(4, BigDecimal.valueOf(50000.00))
+              .setParameter(5, BigDecimal.ZERO)
+              .setParameter(6, BigDecimal.ZERO)
+              .setParameter(7, BigDecimal.ZERO)
+              .setParameter(8, BigDecimal.ZERO)
+              .setParameter(9, BigDecimal.ZERO)
+              .setParameter(10, BigDecimal.ZERO)
+              .setParameter(11, universeId)
+              .setParameter(12, savedConstraintSet.getId())
+              .setParameter(13, now)
+              .setParameter(14, now)
+              .setParameter(15, now)
+              .executeUpdate();
+
+          // Return the portfolio by finding it (now it should exist with the correct ID)
+          return portfolioRepository.findById(portfolioId).orElseThrow();
+        });
+
+    // Flush and clear to ensure data is persisted and visible to other transactions
+    entityManager.flush();
+    entityManager.clear();
+    return portfolio;
+  }
 
   /**
    * Create or get a test user in a new transaction.
@@ -42,7 +122,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public User createTestUser(String email) {
-    return createTestUserWithRole(email, User.UserRole.OWNER);
+    User user = createTestUserWithRole(email, User.UserRole.OWNER);
+    entityManager.flush();
+    entityManager.clear();
+    return user;
   }
 
   /**
@@ -78,37 +161,23 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Portfolio createTestPortfolio(UUID portfolioId, UUID userId) {
-    // First check if portfolio exists by portfolioId
-    return portfolioRepository.findById(portfolioId)
-        .orElseGet(() -> {
-          // Check if a portfolio already exists for this userId (due to unique constraint)
-          return portfolioRepository.findByUserId(userId)
-              .orElseGet(() -> {
-                // Create constraint set for portfolio
-                ConstraintSet constraintSet = ConstraintSet.builder()
-                    .userId(userId)
-                    .name("Default Constraints")
-                    .isActive(true)
-                    .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
-                    .maxNameWeightMidCapPct(BigDecimal.valueOf(5.0))
-                    .maxNameWeightSmallCapPct(BigDecimal.valueOf(2.0))
-                    .maxSectorExposurePct(BigDecimal.valueOf(30.0))
-                    .turnoverCapPct(BigDecimal.valueOf(25.0))
-                    .version(1)
-                    .build();
-                ConstraintSet savedConstraintSet = constraintSetRepository.save(constraintSet);
+    // Get a valid universe ID
+    UUID universeId = getFirstUniverseId();
+    return createTestPortfolioWithUniverse(portfolioId, userId, universeId);
+  }
 
-                Portfolio portfolio = Portfolio.builder()
-                    .id(portfolioId)
-                    .userId(userId)
-                    .cashBalance(BigDecimal.valueOf(100000.00))
-                    .totalMarketValue(BigDecimal.valueOf(50000.00))
-                    .activeConstraintSetId(savedConstraintSet.getId())
-                    .activeUniverseId(UUID.randomUUID()) // Set a default universe
-                    .build();
-                return portfolioRepository.save(portfolio);
-              });
-        });
+  /**
+   * Check if portfolio exists.
+   *
+   * @param portfolioId the portfolio UUID
+   * @return true if portfolio exists
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public boolean portfolioExists(UUID portfolioId) {
+    boolean exists = portfolioRepository.findById(portfolioId).isPresent();
+    entityManager.flush();
+    entityManager.clear();
+    return exists;
   }
 
   /**
@@ -349,10 +418,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Universe createTestUniverse(String name) {
-    return universeRepository.findByName(name)
+    Universe universe = universeRepository.findByName(name)
         .orElseGet(() -> {
           try {
-            Universe universe = Universe.builder()
+            Universe newUniverse = Universe.builder()
                 .name(name)
                 .type("CUSTOM")
                 .benchmarkSymbol("SPY")
@@ -369,11 +438,15 @@ public class TestDataHelper {
                     }}
                 ))
                 .build();
-            return universeRepository.save(universe);
+            return universeRepository.save(newUniverse);
           } catch (Exception e) {
             throw new RuntimeException("Failed to create test universe", e);
           }
         });
+    // Flush and clear to ensure data is persisted and visible to other transactions
+    entityManager.flush();
+    entityManager.clear();
+    return universe;
   }
 
   /**
