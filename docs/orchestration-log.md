@@ -788,3 +788,86 @@ All orchestration workflow phases completed successfully:
 
 ---
 
+## [2025-11-06T18:05:00Z] NEW SESSION - V4 Orchestration: Tech Debt Fixes
+
+### Context:
+User requested orchestration of remaining tech debt test failures.
+
+**User Message:** "Orchestrate this: OffCycleIsolationTest (2 tests) - Test ordering issue, low priority. MonthEndWorkflowTest (9 tests) - Complex transaction isolation, uncertain ROI. Both have functionality verified working - these are cosmetic test suite improvements."
+
+**Issues to Address:**
+1. **OffCycleIsolationTest (2 tests)** - Test order dependency
+   - Tests PASS individually, FAIL in full suite (404 errors)
+   - Root cause: Spring context pollution from earlier tests
+   - Functionality verified working (POST /api/runs endpoint exists)
+   - Priority: LOW (cosmetic test suite issue)
+   - Estimated: 1-2 hours
+
+2. **MonthEndWorkflowTest (9 tests)** - Transaction isolation
+   - Tests @Disabled due to transaction visibility issues
+   - Scheduler saves not visible to test queries
+   - Multiple attempted fixes failed (@Transactional, REQUIRES_NEW, @Commit)
+   - Priority: LOW (architectural investigation needed)
+   - Estimated: 4-6 hours, uncertain success
+
+**Current State:**
+- Branch: claude/orchestrator-handler-011CUrjhNZS5deVLJRvcYDJn
+- Tests: 176/176 passing (100%), 9 skipped
+- Previous session: Async + Security fixes COMPLETE
+
+### Orchestrator Decision:
+Spawning Project Manager to analyze tech debt and create implementation plan...
+
+---
+
+## [2025-11-06T18:06:00Z] Session Start - PM Analysis (Tech Debt)
+
+### Context:
+PM analyzing tech debt issues for scope and prioritization.
+
+Spawning PM now...
+
+---
+
+## [2025-11-06T18:10:00Z] PM Analysis Complete - Surprising Findings
+
+### Context:
+PM investigated both tech debt issues and found unexpected results.
+
+**Finding 1: OffCycleIsolationTest - NO FIX NEEDED** ✅
+- Status: PASSING consistently (verified 3 full suite runs)
+- Tests previously reported as "FAIL in full suite" are actually PASSING
+- Either fixed in previous session or issue was intermittent
+- Action needed: Update misleading documentation (15 min)
+
+**Finding 2: MonthEndWorkflowTest - POOR ROI** ⚠️
+- Status: 9/9 tests @Disabled (transaction isolation issue)
+- Business Value: VERY LOW (cosmetic, functionality works)
+- Cost: 4-6 hours with uncertain success (30-40% probability)
+- Previous attempts: @Transactional, REQUIRES_NEW, @Commit - ALL FAILED
+- Net ROI: NEGATIVE
+
+**Current Test Suite Health:**
+- Total: 185 tests
+- Passing: 176/176 (100%)
+- Skipped: 9 (MonthEndWorkflowTest)
+- Failing: 0
+
+**PM Recommendation:** Option A - Documentation Only (30 min)
+
+**Rationale:**
+1. OffCycleIsolationTest already working - just update docs
+2. MonthEndWorkflowTest negative ROI - cosmetic improvement not worth 4-6h
+3. Already at 100% pass rate for executed tests
+4. User labeled both as "low priority" and "cosmetic"
+5. Better resource allocation - focus on features vs test cosmetics
+
+**Options Presented:**
+- **Option A (Recommended):** Documentation only (30 min) → BAZINGA
+- **Option B (Not Recommended):** Attempt MonthEndWorkflowTest fix (4-6h, uncertain)
+- **Option C:** Defer everything → BAZINGA immediately
+
+### Orchestrator Status:
+Awaiting user decision on scope...
+
+---
