@@ -41,15 +41,6 @@ import java.util.Collections;
  * test - MockMvc for testing REST endpoints - Active 'test' profile - Batch configuration excluded
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EnableAutoConfiguration(exclude = {BatchAutoConfiguration.class})
-@ComponentScan(
-    basePackages = "com.stockmonitor",
-    excludeFilters = {
-      @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.stockmonitor\\.batch\\..*"),
-      @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.stockmonitor\\.scheduler\\..*")
-    })
-@EntityScan(basePackages = "com.stockmonitor.model")
-@EnableJpaRepositories(basePackages = "com.stockmonitor.repository")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 // @Transactional removed - contract tests need real transaction behavior
