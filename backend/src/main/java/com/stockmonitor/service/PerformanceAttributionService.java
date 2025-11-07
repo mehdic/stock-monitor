@@ -101,8 +101,8 @@ public class PerformanceAttributionService {
         .excessReturn(excessReturn)
         .topContributors(topContributors)
         .topDetractors(topDetractors)
-        .periodStart(startDate)
-        .periodEnd(endDate)
+        .periodStart(effectiveStartDate)
+        .periodEnd(effectiveEndDate)
         .startingValue(startingValue)
         .endingValue(endingValue)
         .tradeCount(0) // TODO: Calculate from trade history
@@ -181,9 +181,16 @@ public class PerformanceAttributionService {
    * @return Price at date
    */
   private BigDecimal getHistoricalPrice(String symbol, LocalDate date) {
-    // Stub: Return mock price
+    // Stub: Return mock price that varies by date to simulate price changes
     // In real implementation, fetch from market data service
-    return BigDecimal.valueOf(150.00);
+
+    // Use epoch day to create price variation (simulate market movement)
+    // This ensures different months have different prices
+    long daysSinceEpoch = date.toEpochDay();
+    BigDecimal basePrice = BigDecimal.valueOf(150.00);
+    BigDecimal variation = BigDecimal.valueOf((daysSinceEpoch % 100) * 0.1); // Small variation
+
+    return basePrice.add(variation);
   }
 
   /**

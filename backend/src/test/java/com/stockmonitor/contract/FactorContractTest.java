@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,55 +42,41 @@ public class FactorContractTest extends BaseIntegrationTest {
 
   @BeforeEach
   void setupTestData() {
-    // Create test portfolio
+    // Create test user
+    testDataHelper.createTestUser("testuser@example.com");
+    UUID userId = userRepository.findByEmail("testuser@example.com").orElseThrow().getId();
+
+    // Create test portfolio using TestDataHelper (ensures transaction visibility)
     testPortfolioId = UUID.randomUUID();
-    Portfolio portfolio = Portfolio.builder()
-        .id(testPortfolioId)
-        .userId(UUID.randomUUID())
-        .totalMarketValue(BigDecimal.valueOf(1_000_000))
-        .build();
-    portfolioRepository.save(portfolio);
+    testDataHelper.createTestPortfolio(testPortfolioId, userId);
 
-    // Create test holdings with sectors for factor calculation
-    testHoldingId = UUID.randomUUID();
-    Holding holding1 = Holding.builder()
-        .id(testHoldingId)
-        .portfolioId(testPortfolioId)
-        .symbol("AAPL")
-        .sector("Technology")
-        .marketCapTier("LARGE_CAP")
-        .quantity(BigDecimal.valueOf(100))
-        .costBasis(BigDecimal.valueOf(15000))
-        .costBasisPerShare(BigDecimal.valueOf(150))
-        .acquisitionDate(LocalDate.now().minusMonths(6))
-        .currency("USD")
-        .currentPrice(BigDecimal.valueOf(180))
-        .currentMarketValue(BigDecimal.valueOf(18000))
-        .unrealizedPnl(BigDecimal.valueOf(3000))
-        .unrealizedPnlPct(BigDecimal.valueOf(20.00))
-        .weightPct(BigDecimal.valueOf(50.00))
-        .build();
+    // Create test holdings with sectors for factor calculation using TestDataHelper
+    // This ensures the holdings are visible to HTTP requests in separate transactions
+    Holding holding1 = testDataHelper.createTestHolding(
+        testPortfolioId,
+        "AAPL",
+        BigDecimal.valueOf(100),
+        BigDecimal.valueOf(15000),
+        "Technology"
+    );
+    testHoldingId = holding1.getId();
 
-    Holding holding2 = Holding.builder()
-        .portfolioId(testPortfolioId)
-        .symbol("MSFT")
-        .sector("Technology")
-        .marketCapTier("LARGE_CAP")
-        .quantity(BigDecimal.valueOf(50))
-        .costBasis(BigDecimal.valueOf(15000))
-        .costBasisPerShare(BigDecimal.valueOf(300))
-        .acquisitionDate(LocalDate.now().minusMonths(3))
-        .currency("USD")
-        .currentPrice(BigDecimal.valueOf(350))
-        .currentMarketValue(BigDecimal.valueOf(17500))
-        .unrealizedPnl(BigDecimal.valueOf(2500))
-        .unrealizedPnlPct(BigDecimal.valueOf(16.67))
-        .weightPct(BigDecimal.valueOf(50.00))
-        .build();
-
-    holdingRepository.saveAll(Arrays.asList(holding1, holding2));
+    testDataHelper.createTestHolding(
+        testPortfolioId,
+        "MSFT",
+        BigDecimal.valueOf(50),
+        BigDecimal.valueOf(15000),
+        "Technology"
+    );
   }
 
+  @AfterEach
+  void cleanupTestData() {
+    // Cleanup test data in reverse dependency order (child → parent)
+    holdingRepository.deleteAll();
+    portfolioRepository.deleteAll();
+    userRepository.deleteAll();
+  }
 
   /**
    * Test GET /api/portfolios/{id}/factors returns factor scores for all holdings.

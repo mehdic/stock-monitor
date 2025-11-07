@@ -67,6 +67,13 @@ public class PortfolioController {
     log.info("Upload holdings request for portfolio: {}, file: {}", id, file.getOriginalFilename());
 
     HoldingsUploadResponse response = portfolioService.uploadHoldings(id, file.getInputStream());
+
+    // Return 400 Bad Request if there are validation errors
+    if (response.getValidationErrors() != null && !response.getValidationErrors().isEmpty()) {
+      log.warn("CSV validation failed with {} errors", response.getValidationErrors().size());
+      return ResponseEntity.badRequest().body(response);
+    }
+
     return ResponseEntity.ok(response);
   }
 

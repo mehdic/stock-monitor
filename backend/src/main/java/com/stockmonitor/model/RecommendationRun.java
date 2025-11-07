@@ -95,6 +95,9 @@ public class RecommendationRun {
   @Column(name = "data_freshness_check_passed", nullable = false)
   private Boolean dataFreshnessCheckPassed = false;
 
+  @Column(name = "data_freshness_snapshot", columnDefinition = "TEXT")
+  private String dataFreshnessSnapshot;
+
   @Builder.Default
   @Column(name = "constraint_feasibility_check_passed", nullable = false)
   private Boolean constraintFeasibilityCheckPassed = false;

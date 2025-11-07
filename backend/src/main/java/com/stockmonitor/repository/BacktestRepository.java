@@ -1,6 +1,7 @@
 package com.stockmonitor.repository;
 
 import com.stockmonitor.model.Backtest;
+import com.stockmonitor.model.BacktestStatus;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,7 +12,7 @@ public interface BacktestRepository extends JpaRepository<Backtest, UUID> {
 
   List<Backtest> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
-  List<Backtest> findByStatus(String status);
+  List<Backtest> findByStatus(BacktestStatus status);
 
-  List<Backtest> findByUserIdAndStatus(UUID userId, String status);
+  List<Backtest> findByUserIdAndStatus(UUID userId, BacktestStatus status);
 }

@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * Tests the happy path for User Story 1.
  */
+@DirtiesContext
 public class OnboardingFlowTest extends BaseIntegrationTest {
 
     @Autowired

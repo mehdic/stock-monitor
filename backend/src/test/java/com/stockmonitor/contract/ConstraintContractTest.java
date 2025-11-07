@@ -194,8 +194,8 @@ public class ConstraintContractTest extends BaseIntegrationTest {
                 .header("Authorization", "Bearer " + getValidJwtToken()))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.maxNameWeightLargeCapPct").value(10.0)) // Default value
-        .andExpect(jsonPath("$.maxSectorExposurePct").value(30.0)) // Default value
+        .andExpect(jsonPath("$.maxNameWeightLargeCapPct").value(5.0)) // Default value (matches entity)
+        .andExpect(jsonPath("$.maxSectorExposurePct").value(20.0)) // Default value (matches entity)
         .andExpect(jsonPath("$.turnoverCapPct").value(25.0)); // Default value
   }
 
