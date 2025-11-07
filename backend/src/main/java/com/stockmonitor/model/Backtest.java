@@ -32,6 +32,9 @@ public class Backtest {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Column(name = "portfolio_id")
+  private UUID portfolioId;
+
   @NotNull
   @Column(name = "universe_id", nullable = false)
   private UUID universeId;
@@ -106,8 +109,13 @@ public class Backtest {
   @Column(name = "cost_assumptions", nullable = false, columnDefinition = "TEXT")
   private String costAssumptions = "{}";
 
+  @Type(JsonType.class)
+  @Column(name = "constraints_json", columnDefinition = "TEXT")
+  private String constraintsJson;
+
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private String status = "PENDING";
+  private BacktestStatus status = BacktestStatus.PENDING;
 
   @Column(name = "error_message", length = 1000)
   private String errorMessage;

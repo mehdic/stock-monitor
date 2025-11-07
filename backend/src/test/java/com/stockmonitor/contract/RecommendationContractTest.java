@@ -49,6 +49,21 @@ class RecommendationContractTest extends BaseIntegrationTest {
 
     // Create test portfolio
     testDataHelper.createTestPortfolio(java.util.UUID.fromString(portfolioId), userId);
+
+    // Create test recommendation runs with specific IDs for tests
+    // Run 1: Completed run with recommendations
+    testDataHelper.createTestRecommendationRunWithId(
+        java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        userId,
+        java.util.UUID.fromString(portfolioId)
+    );
+
+    // Run 2: In-progress run with no recommendations yet
+    testDataHelper.createTestRecommendationRunInProgress(
+        java.util.UUID.fromString("00000000-0000-0000-0000-000000000002"),
+        userId,
+        java.util.UUID.fromString(portfolioId)
+    );
   }
 
   @AfterEach

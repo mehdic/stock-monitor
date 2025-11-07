@@ -54,6 +54,7 @@ class UniverseContractTest extends BaseIntegrationTest {
           .benchmarkSymbol("SPY")
           .constituentCount(500)
           .minMarketCap(java.math.BigDecimal.valueOf(10_000_000_000L))
+          .maxMarketCap(java.math.BigDecimal.valueOf(999_999_999_999L)) // Effectively no max
           .effectiveDate(java.time.LocalDate.now())
           .isActive(true)
           .version(1)
@@ -67,6 +68,7 @@ class UniverseContractTest extends BaseIntegrationTest {
           .benchmarkSymbol("SPY")
           .constituentCount(900)
           .minMarketCap(java.math.BigDecimal.valueOf(2_000_000_000L))
+          .maxMarketCap(java.math.BigDecimal.valueOf(999_999_999_999L)) // Effectively no max
           .effectiveDate(java.time.LocalDate.now())
           .isActive(true)
           .version(1)

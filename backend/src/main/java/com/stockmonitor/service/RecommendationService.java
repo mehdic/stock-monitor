@@ -1,5 +1,7 @@
 package com.stockmonitor.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmonitor.dto.RecommendationDTO;
 import com.stockmonitor.dto.RecommendationRunDTO;
 import com.stockmonitor.model.*;
@@ -33,6 +35,7 @@ public class RecommendationService {
   private final UniverseRepository universeRepository;
   private final ConstraintSetRepository constraintSetRepository;
   private final PortfolioRepository portfolioRepository;
+  private final ObjectMapper objectMapper;
 
   /**
    * Trigger a new recommendation run for a portfolio.
@@ -80,6 +83,14 @@ public class RecommendationService {
     }
 
     // 6. Create run record
+    String dataFreshnessSnapshot;
+    try {
+      dataFreshnessSnapshot = objectMapper.writeValueAsString(healthCheck);
+    } catch (JsonProcessingException e) {
+      log.warn("Failed to serialize health check to JSON, using summary only", e);
+      dataFreshnessSnapshot = healthCheck.summary();
+    }
+
     RecommendationRun run =
         RecommendationRun.builder()
             .userId(portfolio.getUserId())
@@ -91,6 +102,7 @@ public class RecommendationService {
             .scheduledDate(LocalDate.now())
             .startedAt(LocalDateTime.now())
             .dataFreshnessCheckPassed(healthCheck.healthy())
+            .dataFreshnessSnapshot(dataFreshnessSnapshot)
             .constraintFeasibilityCheckPassed(true) // Placeholder
             .build();
 

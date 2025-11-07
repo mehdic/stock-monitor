@@ -1,5 +1,6 @@
 package com.stockmonitor.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockmonitor.model.RecommendationRun;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +28,15 @@ public class RecommendationRunDTO {
   private LocalDateTime completedAt;
   private Long executionDurationMs;
   private Integer recommendationCount;
+
+  /**
+   * Alias for recommendationCount to match API contract expectations.
+   */
+  @JsonProperty("numRecommendations")
+  public Integer getNumRecommendations() {
+    return recommendationCount;
+  }
+
   private Integer exclusionCount;
   private BigDecimal expectedTurnoverPct;
   private BigDecimal estimatedCostBps;
@@ -36,6 +46,7 @@ public class RecommendationRunDTO {
   private UUID previousRunId;
   private String errorMessage;
   private Boolean dataFreshnessCheckPassed;
+  private String dataFreshnessSnapshot;
   private Boolean constraintFeasibilityCheckPassed;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
@@ -63,6 +74,7 @@ public class RecommendationRunDTO {
         .previousRunId(run.getPreviousRunId())
         .errorMessage(run.getErrorMessage())
         .dataFreshnessCheckPassed(run.getDataFreshnessCheckPassed())
+        .dataFreshnessSnapshot(run.getDataFreshnessSnapshot())
         .constraintFeasibilityCheckPassed(run.getConstraintFeasibilityCheckPassed())
         .createdAt(run.getCreatedAt())
         .updatedAt(run.getUpdatedAt())

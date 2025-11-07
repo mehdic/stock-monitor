@@ -11,5 +11,6 @@
   <include file="db/changelog/changes/v1.0.2-setup-partitioning.xml"/>
   <include file="db/changelog/changes/v1.0.3-seed-reference-data.xml"/>
   <include file="db/changelog/changes/v1.0.4-add-portfolio-id-to-run.xml"/>
+  <include file="db/changelog/changes/v1.0.5-add-async-backtest-columns.xml"/>
 
 </databaseChangeLog>

@@ -1,6 +1,7 @@
 package com.stockmonitor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.stockmonitor.config.TestSecurityConfig;
 import com.stockmonitor.helper.TestDataHelper;
 import com.stockmonitor.repository.UserRepository;
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +31,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.util.Collections;
 
@@ -142,5 +146,28 @@ public abstract class BaseIntegrationTest {
    */
   protected <T> org.springframework.http.HttpEntity<T> createAuthEntity(T body, String username) {
     return new org.springframework.http.HttpEntity<>(body, createAuthHeaders(username));
+  }
+
+  /**
+   * Create a WebSocket STOMP client with proper Jackson configuration for Java 8 date/time types.
+   *
+   * This method configures the client-side ObjectMapper with JavaTimeModule to handle
+   * LocalDateTime, LocalDate, and other java.time types in WebSocket messages.
+   *
+   * @return configured WebSocketStompClient
+   */
+  protected WebSocketStompClient createWebSocketStompClient() {
+    WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+
+    // Create ObjectMapper with JavaTimeModule for date/time support
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+
+    // Configure message converter
+    MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
+    messageConverter.setObjectMapper(objectMapper);
+
+    stompClient.setMessageConverter(messageConverter);
+    return stompClient;
   }
 }

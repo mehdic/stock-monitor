@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <!-- Version 1.0.5: Add async backtest support columns -->
+  <changeSet id="v1.0.5-add-async-backtest-columns" author="claude">
+    <comment>
+      Add columns to support async backtest job queue pattern.
+      - portfolio_id: Store portfolio reference for backtest request
+      - constraints_json: Store BacktestConstraintsDTO as JSON for async processing
+    </comment>
+
+    <!-- Add portfolio_id column -->
+    <addColumn tableName="backtest">
+      <column name="portfolio_id" type="uuid">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+
+    <!-- Add constraints_json column -->
+    <addColumn tableName="backtest">
+      <column name="constraints_json" type="jsonb">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+
+    <rollback>
+      <dropColumn tableName="backtest" columnName="portfolio_id"/>
+      <dropColumn tableName="backtest" columnName="constraints_json"/>
+    </rollback>
+  </changeSet>
+
+</databaseChangeLog>

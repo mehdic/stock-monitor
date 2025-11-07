@@ -295,30 +295,47 @@ public class TestDataHelper {
                 return constraintSetRepository.save(cs);
               });
 
-          RecommendationRun run = RecommendationRun.builder()
-              .id(runId)
-              .userId(userId)
-              .portfolioId(portfolioId)
-              .constraintSetId(constraintSet.getId())
-              .universeId(UUID.randomUUID()) // Mock universe ID
-              .runType("SCHEDULED")
-              .status("COMPLETED")
-              .scheduledDate(LocalDate.now())
-              .startedAt(LocalDateTime.now().minusHours(1))
-              .completedAt(LocalDateTime.now().minusMinutes(30))
-              .executionDurationMs(1800000L)
-              .recommendationCount(30)
-              .exclusionCount(5)
-              .expectedTurnoverPct(BigDecimal.valueOf(15.0))
-              .build();
+          UUID universeId = getFirstUniverseId();
+          LocalDateTime now = LocalDateTime.now();
+          LocalDate today = LocalDate.now();
 
-          RecommendationRun savedRun = recommendationRunRepository.save(run);
+          // Use native SQL to insert with specific ID (bypass @GeneratedValue)
+          entityManager.createNativeQuery(
+              "INSERT INTO recommendation_run (id, user_id, portfolio_id, constraint_set_id, universe_id, " +
+              "run_type, status, scheduled_date, started_at, completed_at, execution_duration_ms, " +
+              "recommendation_count, exclusion_count, expected_turnover_pct, data_freshness_check_passed, " +
+              "constraint_feasibility_check_passed, decision, created_at, updated_at) " +
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+              .setParameter(1, runId)
+              .setParameter(2, userId)
+              .setParameter(3, portfolioId)
+              .setParameter(4, constraintSet.getId())
+              .setParameter(5, universeId)
+              .setParameter(6, "SCHEDULED")
+              .setParameter(7, "COMPLETED")
+              .setParameter(8, today)
+              .setParameter(9, now.minusHours(1))
+              .setParameter(10, now.minusMinutes(30))
+              .setParameter(11, 1800000L)
+              .setParameter(12, 2)
+              .setParameter(13, 5)
+              .setParameter(14, BigDecimal.valueOf(15.0))
+              .setParameter(15, true)
+              .setParameter(16, true)
+              .setParameter(17, "APPROVED")
+              .setParameter(18, now)
+              .setParameter(19, now)
+              .executeUpdate();
 
           // Create some test recommendations for this run
           createTestRecommendation(runId, "AAPL", 1, "Technology");
           createTestRecommendation(runId, "MSFT", 2, "Technology");
 
-          return savedRun;
+          // Flush and clear to ensure data is persisted and visible to other transactions
+          entityManager.flush();
+          entityManager.clear();
+
+          return recommendationRunRepository.findById(runId).orElseThrow();
         });
   }
 
@@ -350,20 +367,39 @@ public class TestDataHelper {
                 return constraintSetRepository.save(cs);
               });
 
-          RecommendationRun run = RecommendationRun.builder()
-              .id(runId)
-              .userId(userId)
-              .portfolioId(portfolioId)
-              .constraintSetId(constraintSet.getId())
-              .universeId(UUID.randomUUID()) // Mock universe ID
-              .runType("SCHEDULED")
-              .status("RUNNING")
-              .scheduledDate(LocalDate.now())
-              .startedAt(LocalDateTime.now().minusMinutes(5))
-              .recommendationCount(0)
-              .build();
+          UUID universeId = getFirstUniverseId();
+          LocalDateTime now = LocalDateTime.now();
+          LocalDate today = LocalDate.now();
 
-          return recommendationRunRepository.save(run);
+          // Use native SQL to insert with specific ID (bypass @GeneratedValue)
+          entityManager.createNativeQuery(
+              "INSERT INTO recommendation_run (id, user_id, portfolio_id, constraint_set_id, universe_id, " +
+              "run_type, status, scheduled_date, started_at, recommendation_count, exclusion_count, " +
+              "data_freshness_check_passed, constraint_feasibility_check_passed, decision, created_at, updated_at) " +
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+              .setParameter(1, runId)
+              .setParameter(2, userId)
+              .setParameter(3, portfolioId)
+              .setParameter(4, constraintSet.getId())
+              .setParameter(5, universeId)
+              .setParameter(6, "SCHEDULED")
+              .setParameter(7, "RUNNING")
+              .setParameter(8, today)
+              .setParameter(9, now.minusMinutes(5))
+              .setParameter(10, 0)
+              .setParameter(11, 0)
+              .setParameter(12, true)
+              .setParameter(13, true)
+              .setParameter(14, "PENDING")
+              .setParameter(15, now)
+              .setParameter(16, now)
+              .executeUpdate();
+
+          // Flush and clear to ensure data is persisted and visible to other transactions
+          entityManager.flush();
+          entityManager.clear();
+
+          return recommendationRunRepository.findById(runId).orElseThrow();
         });
   }
 
@@ -381,31 +417,45 @@ public class TestDataHelper {
   public Recommendation createTestRecommendation(UUID runId, String symbol, int rank, String sector) {
     return recommendationRepository.findByRunIdAndSymbol(runId, symbol)
         .orElseGet(() -> {
-          Recommendation rec = Recommendation.builder()
-              .runId(runId)
-              .symbol(symbol)
-              .rank(rank)
-              .targetWeightPct(BigDecimal.valueOf(3.5))
-              .currentWeightPct(BigDecimal.valueOf(2.0))
-              .weightChangePct(BigDecimal.valueOf(1.5))
-              .confidenceScore(85)
-              .expectedCostBps(BigDecimal.valueOf(15.0))
-              .expectedAlphaBps(BigDecimal.valueOf(50.0))
-              .edgeOverCostBps(BigDecimal.valueOf(35.0))
-              .driver1Name("Value")
-              .driver1Score(BigDecimal.valueOf(0.8))
-              .driver2Name("Momentum")
-              .driver2Score(BigDecimal.valueOf(0.7))
-              .driver3Name("Quality")
-              .driver3Score(BigDecimal.valueOf(0.9))
-              .explanation("Strong fundamental and technical indicators")
-              .sector(sector)
-              .marketCapTier("LARGE")
-              .liquidityTier(1)
-              .currentPrice(BigDecimal.valueOf(150.00))
-              .build();
+          // Use native SQL to insert recommendation (bypass @GeneratedValue)
+          UUID recId = UUID.randomUUID();
+          entityManager.createNativeQuery(
+              "INSERT INTO recommendation (id, run_id, symbol, rank, target_weight_pct, current_weight_pct, " +
+              "weight_change_pct, confidence_score, expected_cost_bps, expected_alpha_bps, edge_over_cost_bps, " +
+              "driver1_name, driver1_score, driver2_name, driver2_score, driver3_name, driver3_score, " +
+              "explanation, change_indicator, sector, market_cap_tier, liquidity_tier, current_price, created_at) " +
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+              .setParameter(1, recId)
+              .setParameter(2, runId)
+              .setParameter(3, symbol)
+              .setParameter(4, rank)
+              .setParameter(5, BigDecimal.valueOf(3.5))
+              .setParameter(6, BigDecimal.valueOf(2.0))
+              .setParameter(7, BigDecimal.valueOf(1.5))
+              .setParameter(8, 85)
+              .setParameter(9, BigDecimal.valueOf(15.0))
+              .setParameter(10, BigDecimal.valueOf(50.0))
+              .setParameter(11, BigDecimal.valueOf(35.0))
+              .setParameter(12, "Value")
+              .setParameter(13, BigDecimal.valueOf(0.8))
+              .setParameter(14, "Momentum")
+              .setParameter(15, BigDecimal.valueOf(0.7))
+              .setParameter(16, "Quality")
+              .setParameter(17, BigDecimal.valueOf(0.9))
+              .setParameter(18, "Strong fundamental and technical indicators")
+              .setParameter(19, "NEW")
+              .setParameter(20, sector)
+              .setParameter(21, "LARGE")
+              .setParameter(22, 1)
+              .setParameter(23, BigDecimal.valueOf(150.00))
+              .setParameter(24, LocalDateTime.now())
+              .executeUpdate();
 
-          return recommendationRepository.save(rec);
+          // Flush and clear to ensure data is persisted and visible to other transactions
+          entityManager.flush();
+          entityManager.clear();
+
+          return recommendationRepository.findById(recId).orElseThrow();
         });
   }
 
@@ -450,15 +500,42 @@ public class TestDataHelper {
   }
 
   /**
-   * Save a universe in a new transaction, ensuring visibility to HTTP requests.
+   * Save a universe in a new transaction with a specific ID, ensuring visibility to HTTP requests.
    * Use this for test data that needs to be visible across transaction boundaries.
+   * Uses native SQL to bypass @GeneratedValue and set a specific UUID.
    *
-   * @param universe the universe to save
+   * @param universe the universe to save (with ID pre-set)
    * @return the saved universe
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Universe saveUniverseInNewTransaction(Universe universe) {
-    return universeRepository.save(universe);
+    // Use native SQL to insert with specific ID (bypass @GeneratedValue)
+    LocalDateTime now = LocalDateTime.now();
+
+    entityManager.createNativeQuery(
+        "INSERT INTO universe (id, name, description, type, benchmark_symbol, constituent_count, " +
+        "min_market_cap, max_market_cap, liquidity_tier_threshold, effective_date, is_active, version, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .setParameter(1, universe.getId())
+        .setParameter(2, universe.getName())
+        .setParameter(3, universe.getDescription())
+        .setParameter(4, universe.getType())
+        .setParameter(5, universe.getBenchmarkSymbol())
+        .setParameter(6, universe.getConstituentCount())
+        .setParameter(7, universe.getMinMarketCap())
+        .setParameter(8, universe.getMaxMarketCap())
+        .setParameter(9, universe.getLiquidityTierThreshold())
+        .setParameter(10, universe.getEffectiveDate())
+        .setParameter(11, universe.getIsActive())
+        .setParameter(12, universe.getVersion())
+        .setParameter(13, now)
+        .setParameter(14, now)
+        .executeUpdate();
+
+    entityManager.flush();
+    entityManager.clear();
+
+    return universeRepository.findById(universe.getId()).orElseThrow();
   }
 
   /**
@@ -469,7 +546,10 @@ public class TestDataHelper {
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public UniverseConstituent saveConstituentInNewTransaction(UniverseConstituent constituent) {
-    return universeConstituentRepository.save(constituent);
+    UniverseConstituent saved = universeConstituentRepository.save(constituent);
+    entityManager.flush();
+    entityManager.clear();
+    return saved;
   }
 
   /**
@@ -531,5 +611,76 @@ public class TestDataHelper {
             throw new RuntimeException("Failed to create test factor model version", e);
           }
         });
+  }
+
+  /**
+   * Create a test backtest with specific ID in a new transaction.
+   *
+   * @param backtestId the backtest ID
+   * @param userId the user ID
+   * @param universeId the universe ID
+   * @param startDate the start date
+   * @param endDate the end date
+   * @return the created backtest
+   */
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public com.stockmonitor.model.Backtest createTestBacktest(UUID backtestId, UUID userId, UUID universeId, LocalDate startDate, LocalDate endDate) {
+    // Create constraint set for backtest
+    ConstraintSet constraintSet = constraintSetRepository
+        .findByUserIdAndIsActiveTrue(userId)
+        .orElseGet(() -> {
+          ConstraintSet cs = ConstraintSet.builder()
+              .userId(userId)
+              .name("Test Constraints")
+              .isActive(true)
+              .maxNameWeightLargeCapPct(BigDecimal.valueOf(10.0))
+              .maxSectorExposurePct(BigDecimal.valueOf(30.0))
+              .turnoverCapPct(BigDecimal.valueOf(25.0))
+              .version(1)
+              .build();
+          return constraintSetRepository.save(cs);
+        });
+
+    LocalDateTime now = LocalDateTime.now();
+
+    // Use native SQL to insert with specific ID
+    entityManager.createNativeQuery(
+        "INSERT INTO backtest (id, user_id, universe_id, constraint_set_id, name, start_date, end_date, " +
+        "initial_capital, final_value, total_return_pct, cagr_pct, volatility_pct, sharpe_ratio, " +
+        "max_drawdown_pct, hit_rate_pct, avg_turnover_pct, total_cost_bps, " +
+        "benchmark_return_pct, beat_equal_weight, status, equity_curve_data, turnover_history, cost_assumptions, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .setParameter(1, backtestId)
+        .setParameter(2, userId)
+        .setParameter(3, universeId)
+        .setParameter(4, constraintSet.getId())
+        .setParameter(5, "Test Backtest")
+        .setParameter(6, startDate)
+        .setParameter(7, endDate)
+        .setParameter(8, BigDecimal.valueOf(1000000.00))
+        .setParameter(9, BigDecimal.valueOf(1250000.00))
+        .setParameter(10, BigDecimal.valueOf(25.00))
+        .setParameter(11, BigDecimal.valueOf(12.50))
+        .setParameter(12, BigDecimal.valueOf(18.20))
+        .setParameter(13, BigDecimal.valueOf(0.89))
+        .setParameter(14, BigDecimal.valueOf(-15.30))
+        .setParameter(15, BigDecimal.valueOf(58.30))
+        .setParameter(16, BigDecimal.valueOf(22.80))
+        .setParameter(17, BigDecimal.valueOf(54.32))
+        .setParameter(18, BigDecimal.valueOf(10.20))
+        .setParameter(19, true)
+        .setParameter(20, "COMPLETED")
+        .setParameter(21, "[]")
+        .setParameter(22, "[]")
+        .setParameter(23, "{}")
+        .setParameter(24, now)
+        .setParameter(25, now)
+        .executeUpdate();
+
+    // Flush and clear to ensure data is persisted
+    entityManager.flush();
+    entityManager.clear();
+
+    return entityManager.find(com.stockmonitor.model.Backtest.class, backtestId);
   }
 }
