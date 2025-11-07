@@ -95,6 +95,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Assert
         assertThat(session.isConnected()).isTrue();
     }
@@ -122,6 +125,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Broadcast notification
         NotificationDTO notification = NotificationDTO.builder()
@@ -175,6 +181,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Send notifications for all categories
         String[] categories = {
@@ -248,6 +257,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Act - Send notifications with different priorities
         String[] priorities = {"HIGH", "MEDIUM", "LOW"};
 
@@ -310,6 +322,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Send unread notification
         NotificationDTO unreadNotification = NotificationDTO.builder()
@@ -392,6 +407,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // User 2 subscribes to their notifications
         user2Session.subscribe("/user/" + user2Id + "/notifications", new StompFrameHandler() {
             @Override
@@ -404,6 +422,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
                 user2Queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Send notification to User 1
         NotificationDTO user1Notification = NotificationDTO.builder()
@@ -482,6 +503,9 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act
         NotificationDTO notification = NotificationDTO.builder()

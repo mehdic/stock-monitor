@@ -117,6 +117,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Send notification - should be received
         NotificationDTO notification1 = createTestNotification(userId, "Notification 1");
         notificationService.broadcastNotification(userId, notification1);
@@ -144,6 +147,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Send notification after reconnection
         NotificationDTO notification2 = createTestNotification(userId, "Notification 2");
@@ -183,6 +189,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
                 }
             });
 
+            // Wait for subscription to be fully established
+            Thread.sleep(200);
+
             // Disconnect
             session.disconnect();
             Thread.sleep(200);
@@ -220,6 +229,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Act - Simulate disconnect/reconnect
         session.disconnect();
         Thread.sleep(500);
@@ -242,6 +254,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Send message after reconnection
         notificationService.broadcastNotification(userId, createTestNotification(userId, "After Reconnect"));
@@ -306,6 +321,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Act - Send messages, disconnect mid-stream, reconnect, continue
         notificationService.broadcastNotification(userId, createTestNotification(userId, "Message 1"));
         Thread.sleep(200);
@@ -335,6 +353,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Continue sending
         notificationService.broadcastNotification(userId, createTestNotification(userId, "Message 3"));
@@ -428,6 +449,9 @@ public class WebSocketReconnectionTest extends BaseIntegrationTest {
                 queue.add((NotificationDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Verify subscription works
         notificationService.broadcastNotification(userId, createTestNotification(userId, "Before Disconnect"));
