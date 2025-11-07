@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -29,21 +30,25 @@ public class SecurityConfig {
   private final ServiceApiKeyAuthFilter serviceApiKeyAuthFilter;
   private final ServiceRoleAccessFilter serviceRoleAccessFilter;
   private final UserDetailsService userDetailsService;
+  private final CorsConfigurationSource corsConfigurationSource;
 
   public SecurityConfig(
       JwtAuthenticationFilter jwtAuthFilter,
       @Lazy ServiceApiKeyAuthFilter serviceApiKeyAuthFilter,
       @Lazy ServiceRoleAccessFilter serviceRoleAccessFilter,
-      UserDetailsService userDetailsService) {
+      UserDetailsService userDetailsService,
+      CorsConfigurationSource corsConfigurationSource) {
     this.jwtAuthFilter = jwtAuthFilter;
     this.serviceApiKeyAuthFilter = serviceApiKeyAuthFilter;
     this.serviceRoleAccessFilter = serviceRoleAccessFilter;
     this.userDetailsService = userDetailsService;
+    this.corsConfigurationSource = corsConfigurationSource;
   }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http.csrf(csrf -> csrf
+    http.cors(cors -> cors.configurationSource(corsConfigurationSource))
+        .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/ws/**") // Disable CSRF for WebSocket endpoints
                 .disable())
         .authorizeHttpRequests(
