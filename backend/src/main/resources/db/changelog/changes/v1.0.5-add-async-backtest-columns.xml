@@ -10,7 +10,7 @@
     <comment>
       Add columns to support async backtest job queue pattern.
       - portfolio_id: Store portfolio reference for backtest request
-      - constraints_json: Store BacktestConstraintsDTO as JSON for async processing
+      Note: constraints_json is now in v1.0.0-initial-schema.xml
     </comment>
 
     <!-- Add portfolio_id column -->
@@ -20,16 +20,8 @@
       </column>
     </addColumn>
 
-    <!-- Add constraints_json column -->
-    <addColumn tableName="backtest">
-      <column name="constraints_json" type="jsonb">
-        <constraints nullable="true"/>
-      </column>
-    </addColumn>
-
     <rollback>
       <dropColumn tableName="backtest" columnName="portfolio_id"/>
-      <dropColumn tableName="backtest" columnName="constraints_json"/>
     </rollback>
   </changeSet>
 

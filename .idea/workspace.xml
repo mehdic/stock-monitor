@@ -4,9 +4,54 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6c6b832f-5ed0-421f-9026-a47f5bd4834c" name="Changes" comment="Update techlead guidelines and workspace configuration documentation">
-      <change afterPath="$PROJECT_DIR$/.claude/agents/orchestrator.md" afterDir="false" />
+    <list default="true" id="6c6b832f-5ed0-421f-9026-a47f5bd4834c" name="Changes" comment="Enhance role drift prevention guidelines and clarify mandatory workflow for orchestrators">
       <change afterPath="$PROJECT_DIR$/otherProjects/specKit/templates/design-system-template.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/developer.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/developer.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/orchestrator.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/orchestrator.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/project_manager.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/project_manager.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/qa_expert.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/qa_expert.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/agents/techlead.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/agents/techlead.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/commands/orchestrate.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/commands/orchestrate.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/scripts/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/scripts/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/changelog/changes/v1.0.0-initial-schema.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/resources/db/changelog/changes/v1.0.0-initial-schema.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/db/changelog/changes/v1.0.5-add-async-backtest-columns.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/resources/db/changelog/changes/v1.0.5-add-async-backtest-columns.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/@stomp_stompjs.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/@stomp_stompjs.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/@tanstack_react-query.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/@tanstack_react-query.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/axios.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/axios.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-3TFVT2CW.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-3TFVT2CW.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-4MBMRILA.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-4MBMRILA.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-S77I6LSE.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-S77I6LSE.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-WERSD76P.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/chunk-WERSD76P.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-dom.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-dom.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-dom_client.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-dom_client.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-router-dom.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react-router-dom.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react_jsx-dev-runtime.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react_jsx-dev-runtime.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react_jsx-runtime.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/react_jsx-runtime.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/sockjs-client.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/sockjs-client.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/zustand.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/zustand.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/zustand_middleware.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/node_modules/.vite/deps_temp_d1ad7aa9/zustand_middleware.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit/spec-driven.md" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit/spec-driven.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/otherProjects/specKit/templates/commands/analyze.md" beforeDir="false" afterPath="$PROJECT_DIR$/otherProjects/specKit/templates/commands/analyze.md" afterDir="false" />
@@ -24,15 +69,17 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Spring Boot.StockMonitorApplication.executor": "Run",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/mchaouachi/IdeaProjects/StockMonitor/.claude/agents",
+    "last_opened_file_path": "/Users/mchaouachi/IdeaProjects/StockMonitor/.claude/commands",
     "node.js.selected.package.tslint": "(autodetect)"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/.claude/agents" />
       <recent name="$PROJECT_DIR$/.claude/commands" />
+      <recent name="$PROJECT_DIR$/.claude/agents" />
+      <recent name="$PROJECT_DIR$/.claude" />
     </key>
   </component>
   <component name="RunManager">
@@ -87,13 +134,49 @@
       <option name="project" value="LOCAL" />
       <updated>1762425682580</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Add orchestrator documentation and update workspace configuration">
+      <option name="closed" value="true" />
+      <created>1762431460023</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762431460023</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Add V4 orchestration documentation and initialization script">
+      <option name="closed" value="true" />
+      <created>1762432888097</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1762432888097</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Enhance project manager autonomy guidelines and clarify decision-making protocols">
+      <option name="closed" value="true" />
+      <created>1762436606027</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1762436606027</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Enhance role drift prevention guidelines and clarify mandatory workflow for orchestrators">
+      <option name="closed" value="true" />
+      <created>1762443313247</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1762443313247</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add workspace configuration and update orchestration documentation" />
     <MESSAGE value="Add workspace configuration and project manager documentation" />
     <MESSAGE value="Update techlead guidelines and workspace configuration documentation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update techlead guidelines and workspace configuration documentation" />
+    <MESSAGE value="Add orchestrator documentation and update workspace configuration" />
+    <MESSAGE value="Add V4 orchestration documentation and initialization script" />
+    <MESSAGE value="Enhance project manager autonomy guidelines and clarify decision-making protocols" />
+    <MESSAGE value="Enhance role drift prevention guidelines and clarify mandatory workflow for orchestrators" />
+    <option name="LAST_COMMIT_MESSAGE" value="Enhance role drift prevention guidelines and clarify mandatory workflow for orchestrators" />
   </component>
 </project>

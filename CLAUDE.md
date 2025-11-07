@@ -366,9 +366,76 @@ npm run dev
 ```
 
 **Access**:
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 - API Docs: http://localhost:8080/swagger-ui.html
+
+### Convenience Scripts
+
+**IMPORTANT**: Three shell scripts are available in the project root for managing the application:
+
+#### 1. `./build-and-start.sh` - Full Build and Start
+**Purpose**: Kills existing processes, builds both backend and frontend, then starts both services.
+
+**Use when**:
+- After pulling new code changes
+- After dependency updates
+- When you want a clean build and fresh start
+
+**What it does**:
+1. Kills any processes on ports 8080 and 3000
+2. Runs `mvn -o clean package` (backend build)
+3. Runs `npm run build` (frontend build)
+4. Starts backend with `mvn -o spring-boot:run`
+5. Starts frontend with `npm run dev`
+6. Logs output to `logs/backend.log` and `logs/frontend.log`
+
+**Usage**:
+```bash
+./build-and-start.sh
+```
+
+#### 2. `./start.sh` - Quick Start (No Build)
+**Purpose**: Kills existing processes and starts both services without rebuilding.
+
+**Use when**:
+- Restarting after stopping services
+- No code changes since last build
+- Quick restart during development
+
+**What it does**:
+1. Kills any processes on ports 8080 and 3000
+2. Starts backend with `mvn -o spring-boot:run`
+3. Starts frontend with `npm run dev`
+4. Logs output to `logs/backend.log` and `logs/frontend.log`
+
+**Usage**:
+```bash
+./start.sh
+```
+
+#### 3. `./stop.sh` - Stop All Services
+**Purpose**: Cleanly stops all StockMonitor services.
+
+**Use when**:
+- Stopping services before rebuilding
+- Shutting down for the day
+- Freeing up ports 8080 and 3000
+
+**What it does**:
+1. Kills any processes on port 8080 (backend)
+2. Kills any processes on port 3000 (frontend)
+
+**Usage**:
+```bash
+./stop.sh
+```
+
+**Logs**: All scripts write service output to `logs/` directory:
+- `logs/backend.log` - Backend application logs
+- `logs/frontend.log` - Frontend dev server logs
+
+**Note**: The frontend runs on port **3000** (not 5173 as mentioned elsewhere). This is configured in `frontend/vite.config.ts`.
 
 ---
 

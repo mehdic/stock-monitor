@@ -26,7 +26,7 @@
       </column>
       <column name="min_market_cap" type="decimal(19,4)"/>
       <column name="max_market_cap" type="decimal(19,4)"/>
-      <column name="liquidity_tier_threshold" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="liquidity_tier_threshold" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
       <column name="is_active" type="boolean" defaultValueBoolean="true">
@@ -71,6 +71,9 @@
       <column name="email_verified" type="boolean" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
+      <column name="enabled" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
       <column name="disclaimer_accepted_at" type="timestamp"/>
       <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
         <constraints nullable="false"/>
@@ -82,7 +85,7 @@
       <column name="timezone" type="varchar(50)" defaultValue="America/New_York">
         <constraints nullable="false"/>
       </column>
-      <column name="notification_preferences" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="notification_preferences" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
     </createTable>
@@ -127,6 +130,8 @@
       <column name="universe_coverage_pct" type="decimal(5,2)" defaultValueNumeric="0">
         <constraints nullable="false"/>
       </column>
+      <column name="active_universe_id" type="uuid"/>
+      <column name="active_constraint_set_id" type="uuid"/>
       <column name="last_calculated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
         <constraints nullable="false"/>
       </column>
@@ -359,16 +364,16 @@
       <column name="is_active" type="boolean" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
-      <column name="value_definition" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="value_definition" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="momentum_definition" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="momentum_definition" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="quality_definition" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="quality_definition" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="revisions_definition" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="revisions_definition" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
       <column name="sector_neutralization_method" type="varchar(100)">
@@ -377,7 +382,7 @@
       <column name="winsorization_percentile" type="decimal(5,2)" defaultValueNumeric="1.00">
         <constraints nullable="false"/>
       </column>
-      <column name="composite_weighting" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="composite_weighting" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
       <column name="description" type="varchar(1000)"/>
@@ -483,6 +488,7 @@
       <column name="data_freshness_check_passed" type="boolean" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
+      <column name="data_freshness_snapshot" type="text"/>
       <column name="constraint_feasibility_check_passed" type="boolean" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
@@ -682,7 +688,7 @@
       <column name="sector" type="varchar(50)">
         <constraints nullable="false"/>
       </column>
-      <column name="component_breakdown" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="component_breakdown" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
       <column name="data_quality_score" type="integer" defaultValueNumeric="100">
@@ -734,15 +740,16 @@
       <column name="alpha_pct" type="decimal(10,6)"/>
       <column name="beat_equal_weight" type="boolean"/>
       <column name="verdict_text" type="varchar(500)"/>
-      <column name="equity_curve_data" type="jsonb" defaultValue="'[]'::jsonb">
+      <column name="equity_curve_data" type="jsonb" defaultValueComputed="'[]'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="turnover_history" type="jsonb" defaultValue="'[]'::jsonb">
+      <column name="turnover_history" type="jsonb" defaultValueComputed="'[]'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="cost_assumptions" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="cost_assumptions" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
+      <column name="constraints_json" type="text"/>
       <column name="status" type="varchar(20)" defaultValue="PENDING">
         <constraints nullable="false"/>
       </column>
@@ -806,11 +813,11 @@
       <column name="exclusion_count" type="integer">
         <constraints nullable="false"/>
       </column>
-      <column name="constraint_snapshot" type="jsonb" defaultValue="'{}'::jsonb">
+      <column name="constraint_snapshot" type="jsonb" defaultValueComputed="'{}'::jsonb">
         <constraints nullable="false"/>
       </column>
-      <column name="performance_metrics" type="jsonb" defaultValue="'{}'::jsonb"/>
-      <column name="cost_analysis" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="performance_metrics" type="jsonb" defaultValueComputed="'{}'::jsonb"/>
+      <column name="cost_analysis" type="jsonb" defaultValueComputed="'{}'::jsonb"/>
       <column name="disclaimer_text" type="varchar(5000)">
         <constraints nullable="false"/>
       </column>
@@ -858,6 +865,7 @@
       <column name="notification_type" type="varchar(30)">
         <constraints nullable="false"/>
       </column>
+      <column name="category" type="varchar(50)"/>
       <column name="channel" type="varchar(20)" defaultValue="IN_APP">
         <constraints nullable="false"/>
       </column>
@@ -867,6 +875,7 @@
       <column name="subject" type="varchar(200)">
         <constraints nullable="false"/>
       </column>
+      <column name="title" type="varchar(255)"/>
       <column name="message" type="varchar(2000)">
         <constraints nullable="false"/>
       </column>
@@ -919,8 +928,8 @@
         <constraints nullable="false"/>
       </column>
       <column name="action_detail" type="varchar(200)"/>
-      <column name="before_state" type="jsonb" defaultValue="'{}'::jsonb"/>
-      <column name="after_state" type="jsonb" defaultValue="'{}'::jsonb"/>
+      <column name="before_state" type="jsonb" defaultValueComputed="'{}'::jsonb"/>
+      <column name="after_state" type="jsonb" defaultValueComputed="'{}'::jsonb"/>
       <column name="changed_fields" type="text[]"/>
       <column name="ip_address" type="varchar(45)"/>
       <column name="user_agent" type="varchar(500)"/>
@@ -942,6 +951,40 @@
         referencedTableName="app_user"
         referencedColumnNames="id"
         onDelete="SET NULL"/>
+  </changeSet>
+
+  <changeSet id="1.0.0-17" author="stockmonitor">
+    <comment>Create ServiceApiKey table</comment>
+    <createTable tableName="service_api_keys">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="name" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="key_hash" type="varchar(512)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="description" type="varchar(500)"/>
+      <column name="is_active" type="boolean" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="expires_at" type="timestamp"/>
+      <column name="last_used_at" type="timestamp"/>
+      <column name="created_by" type="varchar(100)"/>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex indexName="idx_service_api_keys_key_hash" tableName="service_api_keys">
+      <column name="key_hash"/>
+    </createIndex>
+    <createIndex indexName="idx_service_api_keys_is_active" tableName="service_api_keys">
+      <column name="is_active"/>
+    </createIndex>
   </changeSet>
 
 </databaseChangeLog>
