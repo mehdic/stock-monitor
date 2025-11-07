@@ -115,6 +115,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Assert
         assertThat(session.isConnected()).isTrue();
     }
@@ -142,6 +145,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((RunStatusUpdateDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Broadcast status update
         runStatusController.sendStatusUpdate(testRunId, "RUNNING", 50, "Processing data");
@@ -181,6 +187,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((RunStatusUpdateDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Send status transitions
         runStatusController.sendStatusUpdate(testRunId, "QUEUED", 0, "Queued for execution");
@@ -245,6 +254,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Act - Send progress updates
         for (int progress = 0; progress <= 100; progress += 20) {
             runStatusController.sendStatusUpdate(testRunId, "RUNNING", progress, "Progress: " + progress + "%");
@@ -297,6 +309,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         // Act - Send error update
         String errorMessage = "Data validation failed: Missing required field 'price'";
         runStatusController.sendErrorUpdate(testRunId, errorMessage);
@@ -341,6 +356,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
             }
         });
 
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
+
         session2.subscribe("/topic/runs/" + testRunId + "/status", new StompFrameHandler() {
             @Override
             public Type getPayloadType(StompHeaders headers) {
@@ -352,6 +370,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue2.add((RunStatusUpdateDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act - Broadcast update
         runStatusController.sendStatusUpdate(testRunId, "RUNNING", 50, "Processing");
@@ -395,6 +416,9 @@ public class RunStatusWebSocketIntegrationTest extends BaseIntegrationTest {
                 queue.add((RunStatusUpdateDTO) payload);
             }
         });
+
+        // Wait for subscription to be fully established
+        Thread.sleep(500);
 
         // Act
         runStatusController.sendStatusUpdate(testRunId, "RUNNING", 75, "Finalizing recommendations");
