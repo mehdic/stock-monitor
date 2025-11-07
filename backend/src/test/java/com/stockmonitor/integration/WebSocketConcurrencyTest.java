@@ -55,9 +55,8 @@ public class WebSocketConcurrencyTest extends BaseIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        // Setup WebSocket STOMP client
-        stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        // Setup WebSocket STOMP client with JavaTimeModule support
+        stompClient = createWebSocketStompClient();
         stompClient.setDefaultHeartbeat(new long[]{0, 0}); // Disable heartbeat for testing
 
         wsUrl = String.format("ws://localhost:%d/ws", port);

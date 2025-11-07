@@ -47,9 +47,8 @@ public class WebSocketConnectionIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        // Setup WebSocket STOMP client
-        stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        // Setup WebSocket STOMP client with JavaTimeModule support
+        stompClient = createWebSocketStompClient();
 
         // Disable heartbeat for testing (avoid need for TaskScheduler)
         stompClient.setDefaultHeartbeat(new long[]{0, 0});

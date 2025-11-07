@@ -55,9 +55,8 @@ public class NotificationWebSocketIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        // Setup WebSocket STOMP client
-        stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        // Setup WebSocket STOMP client with JavaTimeModule support
+        stompClient = createWebSocketStompClient();
 
         wsUrl = String.format("ws://localhost:%d/ws", port);
         testUserId = UUID.randomUUID();
