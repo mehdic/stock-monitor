@@ -23398,3 +23398,5 @@ coordination/backend/~/
 /frontend/node_modules/zustand/vanilla.d.ts
 /frontend/node_modules/zustand/vanilla.js
 /frontend/node_modules/.package-lock.json
+/.idea/easycode/codebase-v2.xml
+/frontend/node_modules/
